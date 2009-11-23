@@ -1,3 +1,5 @@
+// MPD (Music Player Daemon) client
+
 package main
 
 import (
@@ -39,9 +41,9 @@ func Connect(addr string) (c *Client, err os.Error) {
 		return nil, err
 	}
 	if line[0:6] != "OK MPD" {
-		return c, os.NewError("no greeting")
+		return nil, os.NewError("no greeting")
 	}
-	return c, nil;
+	return;
 }
 
 func (c *Client) Disconnect() {
@@ -59,7 +61,7 @@ func (c *Client) readLine() (line string, err os.Error) {
 		line = line[0 : len(line)-1]
 	}
 	fmt.Println("-->", line);
-	return line, nil;
+	return;
 }
 
 func (c *Client) writeLine(line string) (err os.Error) {
@@ -67,7 +69,7 @@ func (c *Client) writeLine(line string) (err os.Error) {
 	_, err = c.rw.Write(strings.Bytes(line + "\n"));
 	// TODO: try again if # written != len(buf)
 	c.rw.Flush();
-	return err;
+	return;
 }
 
 func (c *Client) getAttrs() (attrs map[string]string, err os.Error) {
@@ -87,7 +89,7 @@ func (c *Client) getAttrs() (attrs map[string]string, err os.Error) {
 		key := line[0:i];
 		attrs[key] = line[i+2:];
 	}
-	return attrs, nil;
+	return;
 }
 
 func atoi(s string) (n int) {
@@ -102,7 +104,6 @@ func (c *Client) CurrentSong() (song *Song, err os.Error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("attrs:", attrs);
 	for key, val := range attrs {
 		switch key {
 		case "file":
@@ -125,7 +126,7 @@ func (c *Client) CurrentSong() (song *Song, err os.Error) {
 			song.id = atoi(val)
 		}
 	}
-	return song, nil;
+	return;
 }
 
 func main() {
