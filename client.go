@@ -1,4 +1,5 @@
 // MPD (Music Player Daemon) client
+// Protocol Reference: http://www.musicpd.org/doc/protocol/index.html
 
 package main
 
@@ -7,7 +8,6 @@ import (
 	"fmt";
 	"net";
 	"os";
-	"strconv";
 	"strings";
 )
 
@@ -16,17 +16,7 @@ type Client struct {
 	rw	*bufio.ReadWriter;
 }
 
-type Song struct {
-	file		string;
-	time		int;
-	title		string;
-	artist		string;
-	album		string;
-	track		int;
-	performer	string;
-	pos		int;
-	id		int;
-}
+type Attrs	map[string]string
 
 func Connect(addr string) (c *Client, err os.Error) {
 	conn, err := net.Dial("tcp", "", addr);
@@ -72,8 +62,8 @@ func (c *Client) writeLine(line string) (err os.Error) {
 	return;
 }
 
-func (c *Client) getAttrs() (attrs map[string]string, err os.Error) {
-	attrs = make(map[string]string);
+func (c *Client) getAttrs() (attrs Attrs, err os.Error) {
+	attrs = make(Attrs);
 	for {
 		line, err := c.readLine();
 		if err != nil {
@@ -92,41 +82,14 @@ func (c *Client) getAttrs() (attrs map[string]string, err os.Error) {
 	return;
 }
 
-func atoi(s string) (n int) {
-	n, _ = strconv.Atoi(s);
-	return;
+func (c *Client) CurrentSong() (Attrs, os.Error) {
+	c.writeLine("currentsong");
+	return c.getAttrs();
 }
 
-func (c *Client) CurrentSong() (song *Song, err os.Error) {
-	c.writeLine("currentsong");
-	song = new(Song);
-	attrs, err := c.getAttrs();
-	if err != nil {
-		return nil, err
-	}
-	for key, val := range attrs {
-		switch key {
-		case "file":
-			song.file = val
-		case "Time":
-			song.time = atoi(val)
-		case "Title":
-			song.title = val
-		case "Artist":
-			song.artist = val
-		case "Album":
-			song.album = val
-		case "Track":
-			song.track = atoi(val)
-		case "Performer":
-			song.performer = val
-		case "Pos":
-			song.pos = atoi(val)
-		case "Id":
-			song.id = atoi(val)
-		}
-	}
-	return;
+func (c *Client) Status() (Attrs, os.Error) {
+	c.writeLine("status");
+	return c.getAttrs();
 }
 
 func main() {
@@ -138,7 +101,12 @@ func main() {
 	if err != nil {
 		goto err
 	}
-	fmt.Println(song);
+	fmt.Println("current song:", song);
+	status, err := cli.Status();
+	if err != nil {
+		goto err;
+	}
+	fmt.Println("status:", status);
 	cli.Disconnect();
 	return;
 err:
