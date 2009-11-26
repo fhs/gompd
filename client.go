@@ -65,6 +65,42 @@ func (c *Client) writeLine(line string) (err os.Error) {
 	return;
 }
 
+func (c *Client) readPlaylist() (pls []Attrs, err os.Error) {
+	pls = make([]Attrs, 100);
+
+	n := 0;
+	for {
+		line, err := c.readLine();
+		if err != nil {
+			return nil, err
+		}
+		if line == "OK" {
+			break
+		}
+		if strings.HasPrefix(line, "file:") {	// new song entry begins
+			n++;
+			if n > len(pls) || n > cap(pls) {
+				pls1 := make([]Attrs, 2*cap(pls));
+				for k, a := range pls {
+					pls1[k] = a
+				}
+				pls = pls1;
+			}
+			pls[n-1] = make(Attrs);
+		}
+		if n == 0 {
+			return nil, os.NewError("unexpected: " + line)
+		}
+		z := strings.Index(line, ": ");
+		if z < 0 {
+			return nil, os.NewError("can't parse line: " + line)
+		}
+		key := line[0:z];
+		pls[n-1][key] = line[z+2:];
+	}
+	return pls[0:n], nil;
+}
+
 func (c *Client) getAttrs() (attrs Attrs, err os.Error) {
 	attrs = make(Attrs);
 	for {
@@ -75,12 +111,12 @@ func (c *Client) getAttrs() (attrs Attrs, err os.Error) {
 		if line == "OK" {
 			break
 		}
-		i := strings.Index(line, ": ");
-		if i < 0 {
+		z := strings.Index(line, ": ");
+		if z < 0 {
 			return nil, os.NewError("can't parse line: " + line)
 		}
-		key := line[0:i];
-		attrs[key] = line[i+2:];
+		key := line[0:z];
+		attrs[key] = line[z+2:];
 	}
 	return;
 }
@@ -105,7 +141,7 @@ func (c *Client) readErr() (err os.Error) {
 	case strings.HasPrefix(line, "ACK "):
 		return os.NewError(line[4:])
 	}
-	return os.NewError("unkown response: " + line);
+	return os.NewError("unexpected response: " + line);
 }
 
 //
@@ -158,11 +194,23 @@ func (c *Client) Stop() (err os.Error) {
 }
 
 //
-// Playlist related function
+// Playlist related functions
 //
 
-func (c *Client) PlaylistInfo(start, end SongPOS) (info []map[string]string) {
-	return
+func (c *Client) PlaylistInfo(start, end SongPOS) (pls []Attrs, err os.Error) {
+	if start < 0 && end >= 0 {
+		return nil, os.NewError("negative start index")
+	}
+	if start >= 0 && end < 0 {
+		c.writeLine(fmt.Sprintf("playlistinfo %d", start));
+		return c.readPlaylist();
+	}
+	c.writeLine("playlistinfo");
+	pls, err = c.readPlaylist();
+	if err != nil || start < 0 || end < 0 {
+		return
+	}
+	return pls[start:end], nil;
 }
 
 func main() {
@@ -171,8 +219,15 @@ func main() {
 		goto err
 	}
 	//cli.Play(-1);
-	cli.Pause(true);
+	//cli.Pause(true);
 	//cli.Stop();
+	pls, err := cli.PlaylistInfo(5, -1);
+	if err != nil {
+		goto err
+	}
+	for _, s := range pls {
+		fmt.Printf("song: %v\n\n", s)
+	}
 	goto done;
 
 	song, err := cli.CurrentSong();
