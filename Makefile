@@ -1,7 +1,7 @@
 include $(GOROOT)/src/Make.$(GOARCH)
 
-TARG=client
+TARG=mpd
 GOFILES=\
 	client.go\
 
-include $(GOROOT)/src/Make.cmd
+include $(GOROOT)/src/Make.pkg

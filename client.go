@@ -1,7 +1,7 @@
 // MPD (Music Player Daemon) client library
 // Protocol Reference: http://www.musicpd.org/doc/protocol/index.html
 
-package main
+package mpd
 
 import (
 	"bufio";
@@ -211,39 +211,4 @@ func (c *Client) PlaylistInfo(start, end SongPOS) (pls []Attrs, err os.Error) {
 		return
 	}
 	return pls[start:end], nil;
-}
-
-func main() {
-	cli, err := Connect("127.0.0.1:6600");
-	if err != nil {
-		goto err
-	}
-	//cli.Play(-1);
-	//cli.Pause(true);
-	//cli.Stop();
-	pls, err := cli.PlaylistInfo(5, -1);
-	if err != nil {
-		goto err
-	}
-	for _, s := range pls {
-		fmt.Printf("song: %v\n\n", s)
-	}
-	goto done;
-
-	song, err := cli.CurrentSong();
-	if err != nil {
-		goto err
-	}
-	fmt.Println("current song:", song);
-	status, err := cli.Status();
-	if err != nil {
-		goto err
-	}
-	fmt.Println("status:", status);
-done:
-	cli.Disconnect();
-	return;
-err:
-	fmt.Fprintln(os.Stderr, err);
-	os.Exit(1);
 }
