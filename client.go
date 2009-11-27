@@ -189,8 +189,16 @@ func (c *Client) Play(pos int) os.Error {
 	return c.readErr();
 }
 
-// PlayId plays the song identified by id.
-func (c *Client) PlayId(id int) os.Error	{ return c.Play(id) }
+// PlayId plays the song identified by id. If id is negative, start playing
+// at the currect position in playlist.
+func (c *Client) PlayId(id int) os.Error {
+	if id < 0 {
+		c.writeLine("playid")
+	} else {
+		c.writeLine(fmt.Sprintf("playid %d", id))
+	}
+	return c.readErr();
+}
 
 // Previous plays previous song in the playlist.
 func (c *Client) Previous() os.Error {
