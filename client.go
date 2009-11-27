@@ -14,6 +14,8 @@ import (
 	"strings";
 )
 
+var Chatty bool	// print all conversation with MPD (for debugging)
+
 type Client struct {
 	conn	net.Conn;
 	rw	*bufio.ReadWriter;
@@ -56,12 +58,16 @@ func (c *Client) readLine() (line string, err os.Error) {
 	if line[len(line)-1] == '\n' {
 		line = line[0 : len(line)-1]
 	}
-	fmt.Println("-->", line);
+	if Chatty {
+		fmt.Println("-->", line)
+	}
 	return;
 }
 
 func (c *Client) writeLine(line string) (err os.Error) {
-	fmt.Println("<--", line);
+	if Chatty {
+		fmt.Println("<--", line)
+	}
 	_, err = c.rw.Write(strings.Bytes(line + "\n"));
 	// TODO: try again if # written != len(buf)
 	c.rw.Flush();
