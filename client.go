@@ -1,6 +1,8 @@
-// MPD (Music Player Daemon) client library
-// Protocol Reference: http://www.musicpd.org/doc/protocol/index.html
+// Copyright © 2009 Fazlul Shahriar <fshahriar@gmail.com>.
+// See LICENSE file for license details.
 
+// This package provides the client side interface to MPD (Music Player Daemon).
+// The protocol reference can be found at http://www.musicpd.org/doc/protocol/index.html
 package mpd
 
 import (
@@ -18,12 +20,9 @@ type Client struct {
 }
 
 type Attrs map[string]string
-type SongID int		// song identifier
-type SongPOS int	// song position in the current playlist
-type SongIDPOS int	// SongID or SongPOS
 
-func Connect(addr string) (c *Client, err os.Error) {
-	conn, err := net.Dial("tcp", "", addr);
+func Connect(network, addr string) (c *Client, err os.Error) {
+	conn, err := net.Dial(network, "", addr);
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +39,13 @@ func Connect(addr string) (c *Client, err os.Error) {
 	return;
 }
 
-func (c *Client) Disconnect() {
+func (c *Client) Close() (err os.Error) {
 	if c.conn != nil {
-		c.conn.Close()
+		c.writeLine("close");
+		err = c.conn.Close();
+		c.conn = nil;
 	}
+	return;
 }
 
 func (c *Client) readLine() (line string, err os.Error) {
@@ -150,13 +152,13 @@ func (c *Client) readErr() (err os.Error) {
 //
 
 // Next plays next song in the playlist.
-func (c *Client) Next() (err os.Error) {
+func (c *Client) Next() os.Error {
 	c.writeLine("next");
 	return c.readErr();
 }
 
 // Pause pauses playback if pause is true; resumes playback otherwise.
-func (c *Client) Pause(pause bool) (err os.Error) {
+func (c *Client) Pause(pause bool) os.Error {
 	if pause {
 		c.writeLine("pause 1")
 	} else {
@@ -165,31 +167,37 @@ func (c *Client) Pause(pause bool) (err os.Error) {
 	return c.readErr();
 }
 
-// Play starts playing the song identified by id. If id is negative,
+// Play starts playing the song at playlist position pos. If pos is negative,
 // start playing at the current position in the playlist.
-func (c *Client) Play(id SongIDPOS) (err os.Error) {
-	if id < 0 {
+func (c *Client) Play(pos int) os.Error {
+	if pos < 0 {
 		c.writeLine("play")
 	} else {
-		c.writeLine(fmt.Sprintf("play %d", id))
+		c.writeLine(fmt.Sprintf("play %d", pos))
 	}
 	return c.readErr();
 }
 
+func (c *Client) PlayId(id int) os.Error	{ return c.Play(id) }
+
 // Previous plays previous song in the playlist.
-func (c *Client) Previous() (err os.Error) {
+func (c *Client) Previous() os.Error {
 	c.writeLine("next");
 	return c.readErr();
 }
 
-// Seek seeks to the position time (in seconds) of the song identified by id.
-func (c *Client) Seek(id SongIDPOS, time int) (err os.Error) {
-	c.writeLine(fmt.Sprintf("seek %d %d", id, time));
+// Seek seeks to the position time (in seconds) of the song at playlist position pos.
+func (c *Client) Seek(pos, time int) os.Error {
+	c.writeLine(fmt.Sprintf("seek %d %d", pos, time));
 	return c.readErr();
 }
 
+func (c *Client) SeekId(id, time int) os.Error {
+	return c.Seek(id, time)
+}
+
 // Stop stops playback.
-func (c *Client) Stop() (err os.Error) {
+func (c *Client) Stop() os.Error {
 	c.writeLine("stop");
 	return c.readErr();
 }
@@ -198,7 +206,7 @@ func (c *Client) Stop() (err os.Error) {
 // Playlist related functions
 //
 
-func (c *Client) PlaylistInfo(start, end SongPOS) (pls []Attrs, err os.Error) {
+func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err os.Error) {
 	if start < 0 && end >= 0 {
 		return nil, os.NewError("negative start index")
 	}
@@ -226,7 +234,7 @@ func (c *Client) Delete(start, end int) os.Error {
 	return c.readErr();
 }
 
-func (c *Client) DeleteID(songid int) os.Error {
+func (c *Client) DeleteId(songid int) os.Error {
 	c.writeLine(fmt.Sprintf("delete %d", songid));
 	return c.readErr();
 }
@@ -236,7 +244,7 @@ func (c *Client) Add(uri string) os.Error {
 	return c.readErr();
 }
 
-func (c *Client) AddID(uri string, pos int) (id int, err os.Error) {
+func (c *Client) AddId(uri string, pos int) (id int, err os.Error) {
 	if pos >= 0 {
 		c.writeLine(fmt.Sprintf("%q %d", uri, pos))
 	} else {
@@ -248,7 +256,7 @@ func (c *Client) AddID(uri string, pos int) (id int, err os.Error) {
 	}
 	tok, ok := attrs["Id"];
 	if !ok {
-		return -1, os.NewError("addid did not return ID")
+		return -1, os.NewError("addid did not return Id")
 	}
 	return strconv.Atoi(tok);
 }

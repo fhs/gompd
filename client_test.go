@@ -1,3 +1,6 @@
+// Copyright © 2009 Fazlul Shahriar <fshahriar@gmail.com>.
+// See LICENSE file for license details.
+
 package client_test
 
 import (
@@ -7,7 +10,7 @@ import (
 
 func localConnect(t *testing.T) (cli *Client) {
 	addr := "127.0.0.1:6600";
-	cli, err := Connect(addr);
+	cli, err := Connect("tcp", addr);
 	if err != nil {
 		t.Fatalf("Connect(%q) = %v, %s want PTR, nil", addr, cli, err)
 	}
@@ -28,7 +31,7 @@ func attrsEqual(left, right Attrs) bool {
 
 func TestPlaylistInfo(t *testing.T) {
 	cli := localConnect(t);
-	defer cli.Disconnect();
+	defer cli.Close();
 
 	pls, err := cli.PlaylistInfo(-1, -1);
 	if err != nil {
@@ -40,7 +43,7 @@ func TestPlaylistInfo(t *testing.T) {
 		if _, ok := song["file"]; !ok {
 			t.Errorf(`PlaylistInfo: song %d has no "file" attribute`, i)
 		}
-		pls1, err := cli.PlaylistInfo(SongPOS(i), -1);
+		pls1, err := cli.PlaylistInfo(i, -1);
 		if err != nil {
 			t.Errorf("Client.PlaylistInfo(%d, -1) = %v, %s need _, nil", pls1, err)
 		}
