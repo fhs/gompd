@@ -17,6 +17,12 @@ func localConnect(t *testing.T) (cli *Client) {
 	return;
 }
 
+func close(cli *Client, t *testing.T) {
+	if err := cli.Close(); err != nil {
+		t.Errorf("Client.Close() = %s need nil", err)
+	}
+}
+
 func attrsEqual(left, right Attrs) bool {
 	if len(left) != len(right) {
 		return false
@@ -31,7 +37,7 @@ func attrsEqual(left, right Attrs) bool {
 
 func TestPlaylistInfo(t *testing.T) {
 	cli := localConnect(t);
-	defer cli.Close();
+	defer close(cli, t);
 
 	pls, err := cli.PlaylistInfo(-1, -1);
 	if err != nil {
