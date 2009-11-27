@@ -1,0 +1,6 @@
+syntax: glob
+
+*.[865]
+[865].*
+_obj/
+_test/
