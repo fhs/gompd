@@ -23,6 +23,8 @@ type Client struct {
 
 type Attrs map[string]string
 
+// Connect connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
+// on network network (e.g. "tcp").
 func Connect(network, addr string) (c *Client, err os.Error) {
 	conn, err := net.Dial(network, "", addr);
 	if err != nil {
@@ -41,6 +43,7 @@ func Connect(network, addr string) (c *Client, err os.Error) {
 	return;
 }
 
+// Close terminates the connection with MPD.
 func (c *Client) Close() (err os.Error) {
 	if c.conn != nil {
 		c.writeLine("close");
@@ -130,11 +133,13 @@ func (c *Client) getAttrs() (attrs Attrs, err os.Error) {
 	return;
 }
 
+// CurrentSong returns information about the current song in the playlist.
 func (c *Client) CurrentSong() (Attrs, os.Error) {
 	c.writeLine("currentsong");
 	return c.getAttrs();
 }
 
+// Status returns information about the current status of MPD.
 func (c *Client) Status() (Attrs, os.Error) {
 	c.writeLine("status");
 	return c.getAttrs();
@@ -184,6 +189,7 @@ func (c *Client) Play(pos int) os.Error {
 	return c.readErr();
 }
 
+// PlayId plays the song identified by id.
 func (c *Client) PlayId(id int) os.Error	{ return c.Play(id) }
 
 // Previous plays previous song in the playlist.
@@ -198,6 +204,8 @@ func (c *Client) Seek(pos, time int) os.Error {
 	return c.readErr();
 }
 
+// SeekId is identical to Seek except the song is identified by it's id
+// (not position in playlist).
 func (c *Client) SeekId(id, time int) os.Error {
 	return c.Seek(id, time)
 }
@@ -212,6 +220,11 @@ func (c *Client) Stop() os.Error {
 // Playlist related functions
 //
 
+// PlaylistInfo returns attributes for songs in the current playlist. If
+// both start and end are negative, it does this for all songs in
+// playlist. If end is negative but start is positive, it does it for the
+// song at position start. If both start and end are positive, it does it
+// for positions in range [start, end).
 func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err os.Error) {
 	if start < 0 && end >= 0 {
 		return nil, os.NewError("negative start index")
@@ -228,6 +241,9 @@ func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err os.Error) {
 	return pls[start:end], nil;
 }
 
+// Delete deletes songs from playlist. If both start and end are positive,
+// it deletes those at positions in range [start, end). If end is negative,
+// it deletes the song at position start.
 func (c *Client) Delete(start, end int) os.Error {
 	if start < 0 {
 		return os.NewError("negative start index")
@@ -240,16 +256,21 @@ func (c *Client) Delete(start, end int) os.Error {
 	return c.readErr();
 }
 
-func (c *Client) DeleteId(songid int) os.Error {
-	c.writeLine(fmt.Sprintf("delete %d", songid));
+// DeleteId deletes the song identified by id.
+func (c *Client) DeleteId(id int) os.Error {
+	c.writeLine(fmt.Sprintf("delete %d", id));
 	return c.readErr();
 }
 
+// Add adds the file/directory uri to playlist. Directories add recursively.
 func (c *Client) Add(uri string) os.Error {
 	c.writeLine(fmt.Sprintf("%q", uri));
 	return c.readErr();
 }
 
+// AddId adds the file/directory uri to playlist and returns the identity
+// id of the song added. If pos is positive, the song is added to position
+// pos.
 func (c *Client) AddId(uri string, pos int) (id int, err os.Error) {
 	if pos >= 0 {
 		c.writeLine(fmt.Sprintf("%q %d", uri, pos))
@@ -267,6 +288,7 @@ func (c *Client) AddId(uri string, pos int) (id int, err os.Error) {
 	return strconv.Atoi(tok);
 }
 
+// Clear clears the currect playlist.
 func (c *Client) Clear() os.Error {
 	c.writeLine("clear");
 	return c.readErr();
