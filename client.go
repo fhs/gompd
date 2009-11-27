@@ -297,7 +297,7 @@ func (c *Client) AddId(uri string, pos int) (id int, err os.Error) {
 	return strconv.Atoi(tok);
 }
 
-// Clear clears the currect playlist.
+// Clear clears the current playlist.
 func (c *Client) Clear() os.Error {
 	c.writeLine("clear");
 	return c.readErr();
