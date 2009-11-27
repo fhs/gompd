@@ -8,6 +8,7 @@ import (
 	"fmt";
 	"net";
 	"os";
+	"strconv";
 	"strings";
 )
 
@@ -211,4 +212,48 @@ func (c *Client) PlaylistInfo(start, end SongPOS) (pls []Attrs, err os.Error) {
 		return
 	}
 	return pls[start:end], nil;
+}
+
+func (c *Client) Delete(start, end int) os.Error {
+	if start < 0 {
+		return os.NewError("negative start index")
+	}
+	if end < 0 {
+		c.writeLine(fmt.Sprintf("delete %d", start))
+	} else {
+		c.writeLine(fmt.Sprintf("delete %d %d", start, end))
+	}
+	return c.readErr();
+}
+
+func (c *Client) DeleteID(songid int) os.Error {
+	c.writeLine(fmt.Sprintf("delete %d", songid));
+	return c.readErr();
+}
+
+func (c *Client) Add(uri string) os.Error {
+	c.writeLine(fmt.Sprintf("%q", uri));
+	return c.readErr();
+}
+
+func (c *Client) AddID(uri string, pos int) (id int, err os.Error) {
+	if pos >= 0 {
+		c.writeLine(fmt.Sprintf("%q %d", uri, pos))
+	} else {
+		c.writeLine(fmt.Sprintf("%q", uri))
+	}
+	attrs, err := c.getAttrs();
+	if err != nil {
+		return
+	}
+	tok, ok := attrs["Id"];
+	if !ok {
+		return -1, os.NewError("addid did not return ID")
+	}
+	return strconv.Atoi(tok);
+}
+
+func (c *Client) Clear() os.Error {
+	c.writeLine("clear");
+	return c.readErr();
 }
