@@ -215,7 +215,8 @@ func (c *Client) Seek(pos, time int) os.Error {
 // SeekId is identical to Seek except the song is identified by it's id
 // (not position in playlist).
 func (c *Client) SeekId(id, time int) os.Error {
-	return c.Seek(id, time)
+	c.writeLine(fmt.Sprintf("seekid %d %d", id, time));
+	return c.readErr();
 }
 
 // Stop stops playback.
@@ -266,13 +267,13 @@ func (c *Client) Delete(start, end int) os.Error {
 
 // DeleteId deletes the song identified by id.
 func (c *Client) DeleteId(id int) os.Error {
-	c.writeLine(fmt.Sprintf("delete %d", id));
+	c.writeLine(fmt.Sprintf("deleteid %d", id));
 	return c.readErr();
 }
 
 // Add adds the file/directory uri to playlist. Directories add recursively.
 func (c *Client) Add(uri string) os.Error {
-	c.writeLine(fmt.Sprintf("%q", uri));
+	c.writeLine(fmt.Sprintf("add %q", uri));
 	return c.readErr();
 }
 
@@ -281,9 +282,9 @@ func (c *Client) Add(uri string) os.Error {
 // pos.
 func (c *Client) AddId(uri string, pos int) (id int, err os.Error) {
 	if pos >= 0 {
-		c.writeLine(fmt.Sprintf("%q %d", uri, pos))
+		c.writeLine(fmt.Sprintf("addid %q %d", uri, pos))
 	} else {
-		c.writeLine(fmt.Sprintf("%q", uri))
+		c.writeLine(fmt.Sprintf("addid %q", uri))
 	}
 	attrs, err := c.getAttrs();
 	if err != nil {
