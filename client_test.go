@@ -58,3 +58,22 @@ func TestPlaylistInfo(t *testing.T) {
 		}
 	}
 }
+
+func TestCurrentSong(t *testing.T) {
+	cli := localConnect(t);
+	defer close(cli, t);
+
+	attrs, err := cli.CurrentSong();
+	if err != nil {
+		t.Errorf("Client.CurrentSong() = %v, %s need _, nil", attrs, err);
+		return;
+	}
+	if len(attrs) == 0 {
+		return	// no current song
+	}
+	_, ok := attrs["file"];
+	if !ok {
+		t.Errorf("current song (attrs=%v) has no file attribute", attrs);
+		return;
+	}
+}
