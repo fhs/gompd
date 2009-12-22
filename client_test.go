@@ -4,17 +4,17 @@
 package client_test
 
 import (
-	. "mpd";
-	"testing";
+	. "mpd"
+	"testing"
 )
 
 func localConnect(t *testing.T) (cli *Client) {
-	addr := "127.0.0.1:6600";
-	cli, err := Connect("tcp", addr);
+	addr := "127.0.0.1:6600"
+	cli, err := Connect("tcp", addr)
 	if err != nil {
 		t.Fatalf("Connect(%q) = %v, %s want PTR, nil", addr, cli, err)
 	}
-	return;
+	return
 }
 
 func close(cli *Client, t *testing.T) {
@@ -32,24 +32,24 @@ func attrsEqual(left, right Attrs) bool {
 			return false
 		}
 	}
-	return true;
+	return true
 }
 
 func TestPlaylistInfo(t *testing.T) {
-	cli := localConnect(t);
-	defer close(cli, t);
+	cli := localConnect(t)
+	defer close(cli, t)
 
-	pls, err := cli.PlaylistInfo(-1, -1);
+	pls, err := cli.PlaylistInfo(-1, -1)
 	if err != nil {
 		// We can't use t.Fatalf because defer'ed calls won't run
-		t.Errorf("Client.PlaylistInfo(-1, -1) = %v, %s need _, nil", pls, err);
-		return;
+		t.Errorf("Client.PlaylistInfo(-1, -1) = %v, %s need _, nil", pls, err)
+		return
 	}
 	for i, song := range pls {
 		if _, ok := song["file"]; !ok {
 			t.Errorf(`PlaylistInfo: song %d has no "file" attribute`, i)
 		}
-		pls1, err := cli.PlaylistInfo(i, -1);
+		pls1, err := cli.PlaylistInfo(i, -1)
 		if err != nil {
 			t.Errorf("Client.PlaylistInfo(%d, -1) = %v, %s need _, nil", pls1, err)
 		}
@@ -60,20 +60,20 @@ func TestPlaylistInfo(t *testing.T) {
 }
 
 func TestCurrentSong(t *testing.T) {
-	cli := localConnect(t);
-	defer close(cli, t);
+	cli := localConnect(t)
+	defer close(cli, t)
 
-	attrs, err := cli.CurrentSong();
+	attrs, err := cli.CurrentSong()
 	if err != nil {
-		t.Errorf("Client.CurrentSong() = %v, %s need _, nil", attrs, err);
-		return;
+		t.Errorf("Client.CurrentSong() = %v, %s need _, nil", attrs, err)
+		return
 	}
 	if len(attrs) == 0 {
-		return	// no current song
+		return // no current song
 	}
-	_, ok := attrs["file"];
+	_, ok := attrs["file"]
 	if !ok {
-		t.Errorf("current song (attrs=%v) has no file attribute", attrs);
-		return;
+		t.Errorf("current song (attrs=%v) has no file attribute", attrs)
+		return
 	}
 }

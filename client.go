@@ -6,19 +6,19 @@
 package mpd
 
 import (
-	"bufio";
-	"fmt";
-	"net";
-	"os";
-	"strconv";
-	"strings";
+	"bufio"
+	"fmt"
+	"net"
+	"os"
+	"strconv"
+	"strings"
 )
 
-var Chatty bool	// print all conversation with MPD (for debugging)
+var Chatty bool // print all conversation with MPD (for debugging)
 
 type Client struct {
-	conn	net.Conn;
-	rw	*bufio.ReadWriter;
+	conn net.Conn
+	rw   *bufio.ReadWriter
 }
 
 type Attrs map[string]string
@@ -26,35 +26,35 @@ type Attrs map[string]string
 // Connect connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
 // on network network (e.g. "tcp").
 func Connect(network, addr string) (c *Client, err os.Error) {
-	conn, err := net.Dial(network, "", addr);
+	conn, err := net.Dial(network, "", addr)
 	if err != nil {
 		return nil, err
 	}
-	c = new(Client);
+	c = new(Client)
 	c.rw = bufio.NewReadWriter(bufio.NewReader(conn),
-		bufio.NewWriter(conn));
-	line, err := c.readLine();
+		bufio.NewWriter(conn))
+	line, err := c.readLine()
 	if err != nil {
 		return nil, err
 	}
 	if line[0:6] != "OK MPD" {
 		return nil, os.NewError("no greeting")
 	}
-	return;
+	return
 }
 
 // Close terminates the connection with MPD.
 func (c *Client) Close() (err os.Error) {
 	if c.conn != nil {
-		c.writeLine("close");
-		err = c.conn.Close();
-		c.conn = nil;
+		c.writeLine("close")
+		err = c.conn.Close()
+		c.conn = nil
 	}
-	return;
+	return
 }
 
 func (c *Client) readLine() (line string, err os.Error) {
-	line, err = c.rw.ReadString('\n');
+	line, err = c.rw.ReadString('\n')
 	if err != nil {
 		return
 	}
@@ -64,89 +64,89 @@ func (c *Client) readLine() (line string, err os.Error) {
 	if Chatty {
 		fmt.Println("-->", line)
 	}
-	return;
+	return
 }
 
 func (c *Client) writeLine(line string) (err os.Error) {
 	if Chatty {
 		fmt.Println("<--", line)
 	}
-	_, err = c.rw.Write(strings.Bytes(line + "\n"));
+	_, err = c.rw.Write(strings.Bytes(line + "\n"))
 	// TODO: try again if # written != len(buf)
-	c.rw.Flush();
-	return;
+	c.rw.Flush()
+	return
 }
 
 func (c *Client) readPlaylist() (pls []Attrs, err os.Error) {
-	pls = make([]Attrs, 100);
+	pls = make([]Attrs, 100)
 
-	n := 0;
+	n := 0
 	for {
-		line, err := c.readLine();
+		line, err := c.readLine()
 		if err != nil {
 			return nil, err
 		}
 		if line == "OK" {
 			break
 		}
-		if strings.HasPrefix(line, "file:") {	// new song entry begins
-			n++;
+		if strings.HasPrefix(line, "file:") { // new song entry begins
+			n++
 			if n > len(pls) || n > cap(pls) {
-				pls1 := make([]Attrs, 2*cap(pls));
+				pls1 := make([]Attrs, 2*cap(pls))
 				for k, a := range pls {
 					pls1[k] = a
 				}
-				pls = pls1;
+				pls = pls1
 			}
-			pls[n-1] = make(Attrs);
+			pls[n-1] = make(Attrs)
 		}
 		if n == 0 {
 			return nil, os.NewError("unexpected: " + line)
 		}
-		z := strings.Index(line, ": ");
+		z := strings.Index(line, ": ")
 		if z < 0 {
 			return nil, os.NewError("can't parse line: " + line)
 		}
-		key := line[0:z];
-		pls[n-1][key] = line[z+2:];
+		key := line[0:z]
+		pls[n-1][key] = line[z+2:]
 	}
-	return pls[0:n], nil;
+	return pls[0:n], nil
 }
 
 func (c *Client) getAttrs() (attrs Attrs, err os.Error) {
-	attrs = make(Attrs);
+	attrs = make(Attrs)
 	for {
-		line, err := c.readLine();
+		line, err := c.readLine()
 		if err != nil {
 			return nil, err
 		}
 		if line == "OK" {
 			break
 		}
-		z := strings.Index(line, ": ");
+		z := strings.Index(line, ": ")
 		if z < 0 {
 			return nil, os.NewError("can't parse line: " + line)
 		}
-		key := line[0:z];
-		attrs[key] = line[z+2:];
+		key := line[0:z]
+		attrs[key] = line[z+2:]
 	}
-	return;
+	return
 }
 
 // CurrentSong returns information about the current song in the playlist.
 func (c *Client) CurrentSong() (Attrs, os.Error) {
-	c.writeLine("currentsong");
-	return c.getAttrs();
+	c.writeLine("currentsong")
+	return c.getAttrs()
 }
 
 // Status returns information about the current status of MPD.
 func (c *Client) Status() (Attrs, os.Error) {
-	c.writeLine("status");
-	return c.getAttrs();
+	c.writeLine("status")
+	return c.getAttrs()
 }
 
 func (c *Client) readErr() (err os.Error) {
-	line, err := c.readLine();
+	line, err := c.readLine()
 	switch {
 	case err != nil:
 		return err
@@ -155,7 +155,7 @@ func (c *Client) readErr() (err os.Error) {
 	case strings.HasPrefix(line, "ACK "):
 		return os.NewError(line[4:])
 	}
-	return os.NewError("unexpected response: " + line);
+	return os.NewError("unexpected response: " + line)
 }
 
 //
@@ -164,8 +164,8 @@ func (c *Client) readErr() (err os.Error) {
 
 // Next plays next song in the playlist.
 func (c *Client) Next() os.Error {
-	c.writeLine("next");
-	return c.readErr();
+	c.writeLine("next")
+	return c.readErr()
 }
 
 // Pause pauses playback if pause is true; resumes playback otherwise.
@@ -175,7 +175,7 @@ func (c *Client) Pause(pause bool) os.Error {
 	} else {
 		c.writeLine("pause 0")
 	}
-	return c.readErr();
+	return c.readErr()
 }
 
 // Play starts playing the song at playlist position pos. If pos is negative,
@@ -186,7 +186,7 @@ func (c *Client) Play(pos int) os.Error {
 	} else {
 		c.writeLine(fmt.Sprintf("play %d", pos))
 	}
-	return c.readErr();
+	return c.readErr()
 }
 
 // PlayId plays the song identified by id. If id is negative, start playing
@@ -197,32 +197,32 @@ func (c *Client) PlayId(id int) os.Error {
 	} else {
 		c.writeLine(fmt.Sprintf("playid %d", id))
 	}
-	return c.readErr();
+	return c.readErr()
 }
 
 // Previous plays previous song in the playlist.
 func (c *Client) Previous() os.Error {
-	c.writeLine("next");
-	return c.readErr();
+	c.writeLine("next")
+	return c.readErr()
 }
 
 // Seek seeks to the position time (in seconds) of the song at playlist position pos.
 func (c *Client) Seek(pos, time int) os.Error {
-	c.writeLine(fmt.Sprintf("seek %d %d", pos, time));
-	return c.readErr();
+	c.writeLine(fmt.Sprintf("seek %d %d", pos, time))
+	return c.readErr()
 }
 
 // SeekId is identical to Seek except the song is identified by it's id
 // (not position in playlist).
 func (c *Client) SeekId(id, time int) os.Error {
-	c.writeLine(fmt.Sprintf("seekid %d %d", id, time));
-	return c.readErr();
+	c.writeLine(fmt.Sprintf("seekid %d %d", id, time))
+	return c.readErr()
 }
 
 // Stop stops playback.
 func (c *Client) Stop() os.Error {
-	c.writeLine("stop");
-	return c.readErr();
+	c.writeLine("stop")
+	return c.readErr()
 }
 
 //
@@ -239,15 +239,15 @@ func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err os.Error) {
 		return nil, os.NewError("negative start index")
 	}
 	if start >= 0 && end < 0 {
-		c.writeLine(fmt.Sprintf("playlistinfo %d", start));
-		return c.readPlaylist();
+		c.writeLine(fmt.Sprintf("playlistinfo %d", start))
+		return c.readPlaylist()
 	}
-	c.writeLine("playlistinfo");
-	pls, err = c.readPlaylist();
+	c.writeLine("playlistinfo")
+	pls, err = c.readPlaylist()
 	if err != nil || start < 0 || end < 0 {
 		return
 	}
-	return pls[start:end], nil;
+	return pls[start:end], nil
 }
 
 // Delete deletes songs from playlist. If both start and end are positive,
@@ -262,19 +262,19 @@ func (c *Client) Delete(start, end int) os.Error {
 	} else {
 		c.writeLine(fmt.Sprintf("delete %d %d", start, end))
 	}
-	return c.readErr();
+	return c.readErr()
 }
 
 // DeleteId deletes the song identified by id.
 func (c *Client) DeleteId(id int) os.Error {
-	c.writeLine(fmt.Sprintf("deleteid %d", id));
-	return c.readErr();
+	c.writeLine(fmt.Sprintf("deleteid %d", id))
+	return c.readErr()
 }
 
 // Add adds the file/directory uri to playlist. Directories add recursively.
 func (c *Client) Add(uri string) os.Error {
-	c.writeLine(fmt.Sprintf("add %q", uri));
-	return c.readErr();
+	c.writeLine(fmt.Sprintf("add %q", uri))
+	return c.readErr()
 }
 
 // AddId adds the file/directory uri to playlist and returns the identity
@@ -286,19 +286,19 @@ func (c *Client) AddId(uri string, pos int) (id int, err os.Error) {
 	} else {
 		c.writeLine(fmt.Sprintf("addid %q", uri))
 	}
-	attrs, err := c.getAttrs();
+	attrs, err := c.getAttrs()
 	if err != nil {
 		return
 	}
-	tok, ok := attrs["Id"];
+	tok, ok := attrs["Id"]
 	if !ok {
 		return -1, os.NewError("addid did not return Id")
 	}
-	return strconv.Atoi(tok);
+	return strconv.Atoi(tok)
 }
 
 // Clear clears the current playlist.
 func (c *Client) Clear() os.Error {
-	c.writeLine("clear");
-	return c.readErr();
+	c.writeLine("clear")
+	return c.readErr()
 }
