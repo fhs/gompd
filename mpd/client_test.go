@@ -4,7 +4,7 @@
 package client_test
 
 import (
-	. "mpd"
+	. "gompd.googlecode.com/hg/mpd"
 	"testing"
 )
 

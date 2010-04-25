@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"gompd.googlecode.com/hg"
+	"gompd.googlecode.com/hg/mpd"
 	"os"
 	"time"
 )

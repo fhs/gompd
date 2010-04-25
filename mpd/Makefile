@@ -3,7 +3,7 @@
 
 include $(GOROOT)/src/Make.$(GOARCH)
 
-TARG=mpd
+TARG=gompd.googlecode.com/hg/mpd
 GOFILES=\
 	client.go\
 
