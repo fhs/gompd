@@ -71,7 +71,7 @@ func (c *Client) writeLine(line string) (err os.Error) {
 	if Chatty {
 		fmt.Println("<--", line)
 	}
-	_, err = c.rw.Write(strings.Bytes(line + "\n"))
+	_, err = c.rw.Write([]byte(line + "\n"))
 	// TODO: try again if # written != len(buf)
 	c.rw.Flush()
 	return
