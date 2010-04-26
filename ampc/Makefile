@@ -6,6 +6,5 @@ include $(GOROOT)/src/Make.$(GOARCH)
 TARG=ampc
 GOFILES=\
 	ampc.go\
-	getns.go\
 
 include $(GOROOT)/src/Make.cmd

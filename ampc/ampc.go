@@ -3,39 +3,43 @@
 
 package main
 
-import "fmt"
-import "os"
-import "plan9/p"
-import "plan9/p/clnt"
-
-func fatal(format string, v ...) {
-	fmt.Fprintf(os.Stderr, format, v)
-	os.Exit(1)
-}
-
-func MountP9P(name string) (c *clnt.Clnt, e *p.Error) {
-	uname, err := os.Getenverror("LOGNAME")
-	if err != nil {
-		fatal("$LOGNAME not set\n")
-	}
-	user := p.OsUsers.Uname2User(uname)
-	ns, err := Getns()
-	if err != nil {
-		fatal("could not get name space: %s\n", err)
-	}
-	return clnt.Mount("unix", ns+"/"+name, "", user)
-}
+import (
+	"log"
+	"gompd.googlecode.com/hg/mpd"
+	"goplan9.googlecode.com/hg/plan9/acme"
+)
 
 func main() {
-	acme, err := MountP9P("acme")
+	w, err := acme.New()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "could not connect to acme: %s\n", err)
-		os.Exit(1)
+		log.Exit(err)
 	}
-	file, err := acme.FOpen("new", 0)
+	w.Name("/ampc/")
+
+	cli, err := mpd.Connect("tcp", "localhost:6600")
 	if err != nil {
-		fatal("open new: %s\n", err)
+		log.Exit(err)
 	}
-	file.Close()
-	acme.Unmount()
+	defer cli.Close()
+
+	pls, err := cli.PlaylistInfo(-1, -1)
+	if err != nil {
+		log.Exit(err)
+	}
+
+	for _, song := range pls {
+		w.Printf("body", "%s: %s\n", song["Pos"], song["file"])
+	}
+	w.Ctl("clean")
+
+	for e := range w.EventChan() {
+		switch e.C2 {
+		case 'x', 'X': // execute
+			if string(e.Text) == "Del" {
+				w.Ctl("delete")
+			}
+			w.WriteEvent(e)
+		}
+	}
+	w.CloseFiles()
 }
