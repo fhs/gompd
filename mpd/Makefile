@@ -1,7 +1,7 @@
 # Copyright © 2009 Fazlul Shahriar <fshahriar@gmail.com>.
 # See LICENSE file for license details.
 
-include $(GOROOT)/src/Make.$(GOARCH)
+include $(GOROOT)/src/Make.inc
 
 TARG=gompd.googlecode.com/hg/mpd
 GOFILES=\
