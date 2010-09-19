@@ -30,7 +30,7 @@ func Dial(network, addr string) (c *Client, err os.Error) {
 		return nil, err
 	}
 	if line[0:6] != "OK MPD" {
-		return nil, os.NewError("no greeting")
+		return nil, textproto.ProtocolError("no greeting")
 	}
 	return &Client{text: text}, nil
 }
@@ -38,7 +38,7 @@ func Dial(network, addr string) (c *Client, err os.Error) {
 // Close terminates the connection with MPD.
 func (c *Client) Close() (err os.Error) {
 	if c.text != nil {
-		_, _ = c.text.Cmd("close")
+		c.text.PrintfLine("close")
 		err = c.text.Close()
 		c.text = nil
 	}
@@ -69,11 +69,11 @@ func (c *Client) readPlaylist() (pls []Attrs, err os.Error) {
 			pls[n-1] = make(Attrs)
 		}
 		if n == 0 {
-			return nil, os.NewError("unexpected: " + line)
+			return nil, textproto.ProtocolError("unexpected: " + line)
 		}
 		z := strings.Index(line, ": ")
 		if z < 0 {
-			return nil, os.NewError("can't parse line: " + line)
+			return nil, textproto.ProtocolError("can't parse line: " + line)
 		}
 		key := line[0:z]
 		pls[n-1][key] = line[z+2:]
@@ -93,7 +93,7 @@ func (c *Client) readAttrs() (attrs Attrs, err os.Error) {
 		}
 		z := strings.Index(line, ": ")
 		if z < 0 {
-			return nil, os.NewError("can't parse line: " + line)
+			return nil, textproto.ProtocolError("can't parse line: " + line)
 		}
 		key := line[0:z]
 		attrs[key] = line[z+2:]
@@ -125,15 +125,13 @@ func (c *Client) Status() (Attrs, os.Error) {
 
 func (c *Client) readOKLine() (err os.Error) {
 	line, err := c.text.ReadLine()
-	switch {
-	case err != nil:
-		return err
-	case line == "OK":
-		return nil
-	case strings.HasPrefix(line, "ACK "):
-		return os.NewError(line[4:])
+	if err != nil {
+		return
 	}
-	return os.NewError("unexpected response: " + line)
+	if line == "OK" {
+		return nil
+	}
+	return textproto.ProtocolError("unexpected response: " + line)
 }
 
 func (c *Client) okCmd(format string, args ...interface{}) os.Error {
@@ -283,7 +281,7 @@ func (c *Client) AddId(uri string, pos int) (int, os.Error) {
 	}
 	tok, ok := attrs["Id"]
 	if !ok {
-		return -1, os.NewError("addid did not return Id")
+		return -1, textproto.ProtocolError("addid did not return Id")
 	}
 	return strconv.Atoi(tok)
 }
