@@ -8,11 +8,11 @@ import (
 	"testing"
 )
 
-func localConnect(t *testing.T) (cli *Client) {
+func localDial(t *testing.T) (cli *Client) {
 	addr := "127.0.0.1:6600"
-	cli, err := Connect("tcp", addr)
+	cli, err := Dial("tcp", addr)
 	if err != nil {
-		t.Fatalf("Connect(%q) = %v, %s want PTR, nil", addr, cli, err)
+		t.Fatalf("Dial(%q) = %v, %s want PTR, nil", addr, cli, err)
 	}
 	return
 }
@@ -36,7 +36,7 @@ func attrsEqual(left, right Attrs) bool {
 }
 
 func TestPlaylistInfo(t *testing.T) {
-	cli := localConnect(t)
+	cli := localDial(t)
 	defer close(cli, t)
 
 	pls, err := cli.PlaylistInfo(-1, -1)
@@ -60,7 +60,7 @@ func TestPlaylistInfo(t *testing.T) {
 }
 
 func TestCurrentSong(t *testing.T) {
-	cli := localConnect(t)
+	cli := localDial(t)
 	defer close(cli, t)
 
 	attrs, err := cli.CurrentSong()

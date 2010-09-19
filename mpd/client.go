@@ -23,9 +23,9 @@ type Client struct {
 
 type Attrs map[string]string
 
-// Connect connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
+// Dial connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
 // on network network (e.g. "tcp").
-func Connect(network, addr string) (c *Client, err os.Error) {
+func Dial(network, addr string) (c *Client, err os.Error) {
 	conn, err := net.Dial(network, "", addr)
 	if err != nil {
 		return nil, err

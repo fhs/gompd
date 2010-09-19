@@ -16,7 +16,7 @@ func main() {
 	}
 	w.Name("/ampc/")
 
-	cli, err := mpd.Connect("tcp", "localhost:6600")
+	cli, err := mpd.Dial("tcp", "localhost:6600")
 	if err != nil {
 		log.Exit(err)
 	}

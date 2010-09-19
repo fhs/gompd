@@ -27,7 +27,7 @@ func currentSong(cli *mpd.Client) (song *Song) {
 
 func main() {
 	//mpd.Chatty = true;
-	cli, err := mpd.Connect("tcp", "127.0.0.1:6600")
+	cli, err := mpd.Dial("tcp", "127.0.0.1:6600")
 	if err != nil {
 		goto err
 	}
