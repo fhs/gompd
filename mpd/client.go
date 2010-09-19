@@ -6,19 +6,14 @@
 package mpd
 
 import (
-	"bufio"
-	"fmt"
-	"net"
+	"net/textproto"
 	"os"
 	"strconv"
 	"strings"
 )
 
-var Chatty bool // print all conversation with MPD (for debugging)
-
 type Client struct {
-	conn net.Conn
-	rw   *bufio.ReadWriter
+	text *textproto.Conn
 }
 
 type Attrs map[string]string
@@ -26,54 +21,27 @@ type Attrs map[string]string
 // Dial connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
 // on network network (e.g. "tcp").
 func Dial(network, addr string) (c *Client, err os.Error) {
-	conn, err := net.Dial(network, "", addr)
+	text, err := textproto.Dial(network, addr)
 	if err != nil {
 		return nil, err
 	}
-	c = new(Client)
-	c.rw = bufio.NewReadWriter(bufio.NewReader(conn),
-		bufio.NewWriter(conn))
-	line, err := c.readLine()
+	line, err := text.ReadLine()
 	if err != nil {
 		return nil, err
 	}
 	if line[0:6] != "OK MPD" {
 		return nil, os.NewError("no greeting")
 	}
-	return
+	return &Client{text: text}, nil
 }
 
 // Close terminates the connection with MPD.
 func (c *Client) Close() (err os.Error) {
-	if c.conn != nil {
-		c.writeLine("close")
-		err = c.conn.Close()
-		c.conn = nil
+	if c.text != nil {
+		_, _ = c.text.Cmd("close")
+		err = c.text.Close()
+		c.text = nil
 	}
-	return
-}
-
-func (c *Client) readLine() (line string, err os.Error) {
-	line, err = c.rw.ReadString('\n')
-	if err != nil {
-		return
-	}
-	if line[len(line)-1] == '\n' {
-		line = line[0 : len(line)-1]
-	}
-	if Chatty {
-		fmt.Println("-->", line)
-	}
-	return
-}
-
-func (c *Client) writeLine(line string) (err os.Error) {
-	if Chatty {
-		fmt.Println("<--", line)
-	}
-	_, err = c.rw.Write([]byte(line + "\n"))
-	// TODO: try again if # written != len(buf)
-	c.rw.Flush()
 	return
 }
 
@@ -82,7 +50,7 @@ func (c *Client) readPlaylist() (pls []Attrs, err os.Error) {
 
 	n := 0
 	for {
-		line, err := c.readLine()
+		line, err := c.text.ReadLine()
 		if err != nil {
 			return nil, err
 		}
@@ -113,10 +81,10 @@ func (c *Client) readPlaylist() (pls []Attrs, err os.Error) {
 	return pls[0:n], nil
 }
 
-func (c *Client) getAttrs() (attrs Attrs, err os.Error) {
+func (c *Client) readAttrs() (attrs Attrs, err os.Error) {
 	attrs = make(Attrs)
 	for {
-		line, err := c.readLine()
+		line, err := c.text.ReadLine()
 		if err != nil {
 			return nil, err
 		}
@@ -135,18 +103,28 @@ func (c *Client) getAttrs() (attrs Attrs, err os.Error) {
 
 // CurrentSong returns information about the current song in the playlist.
 func (c *Client) CurrentSong() (Attrs, os.Error) {
-	c.writeLine("currentsong")
-	return c.getAttrs()
+	id, err := c.text.Cmd("currentsong")
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	return c.readAttrs()
 }
 
 // Status returns information about the current status of MPD.
 func (c *Client) Status() (Attrs, os.Error) {
-	c.writeLine("status")
-	return c.getAttrs()
+	id, err := c.text.Cmd("status")
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	return c.readAttrs()
 }
 
-func (c *Client) readErr() (err os.Error) {
-	line, err := c.readLine()
+func (c *Client) readOKLine() (err os.Error) {
+	line, err := c.text.ReadLine()
 	switch {
 	case err != nil:
 		return err
@@ -158,71 +136,70 @@ func (c *Client) readErr() (err os.Error) {
 	return os.NewError("unexpected response: " + line)
 }
 
+func (c *Client) okCmd(format string, args ...interface{}) os.Error {
+	id, err := c.text.Cmd(format, args)
+	if err != nil {
+		return err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	return c.readOKLine()
+}
+
 //
 // Playback control
 //
 
 // Next plays next song in the playlist.
 func (c *Client) Next() os.Error {
-	c.writeLine("next")
-	return c.readErr()
+	return c.okCmd("next")
 }
 
 // Pause pauses playback if pause is true; resumes playback otherwise.
 func (c *Client) Pause(pause bool) os.Error {
 	if pause {
-		c.writeLine("pause 1")
-	} else {
-		c.writeLine("pause 0")
+		return c.okCmd("pause 1")
 	}
-	return c.readErr()
+	return c.okCmd("pause 0")
 }
 
 // Play starts playing the song at playlist position pos. If pos is negative,
 // start playing at the current position in the playlist.
 func (c *Client) Play(pos int) os.Error {
 	if pos < 0 {
-		c.writeLine("play")
-	} else {
-		c.writeLine(fmt.Sprintf("play %d", pos))
+		c.okCmd("play")
 	}
-	return c.readErr()
+	return c.okCmd("play %d", pos)
 }
 
 // PlayId plays the song identified by id. If id is negative, start playing
 // at the currect position in playlist.
 func (c *Client) PlayId(id int) os.Error {
 	if id < 0 {
-		c.writeLine("playid")
-	} else {
-		c.writeLine(fmt.Sprintf("playid %d", id))
+		return c.okCmd("playid")
 	}
-	return c.readErr()
+	return c.okCmd("playid %d", id)
 }
 
 // Previous plays previous song in the playlist.
 func (c *Client) Previous() os.Error {
-	c.writeLine("next")
-	return c.readErr()
+	return c.okCmd("next")
 }
 
 // Seek seeks to the position time (in seconds) of the song at playlist position pos.
 func (c *Client) Seek(pos, time int) os.Error {
-	c.writeLine(fmt.Sprintf("seek %d %d", pos, time))
-	return c.readErr()
+	return c.okCmd("seek %d %d", pos, time)
 }
 
 // SeekId is identical to Seek except the song is identified by it's id
 // (not position in playlist).
 func (c *Client) SeekId(id, time int) os.Error {
-	c.writeLine(fmt.Sprintf("seekid %d %d", id, time))
-	return c.readErr()
+	return c.okCmd("seekid %d %d", id, time)
 }
 
 // Stop stops playback.
 func (c *Client) Stop() os.Error {
-	c.writeLine("stop")
-	return c.readErr()
+	return c.okCmd("stop")
 }
 
 //
@@ -239,10 +216,20 @@ func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err os.Error) {
 		return nil, os.NewError("negative start index")
 	}
 	if start >= 0 && end < 0 {
-		c.writeLine(fmt.Sprintf("playlistinfo %d", start))
+		id, err := c.text.Cmd("playlistinfo %d", start)
+		if err != nil {
+			return nil, err
+		}
+		c.text.StartResponse(id)
+		defer c.text.EndResponse(id)
 		return c.readPlaylist()
 	}
-	c.writeLine("playlistinfo")
+	id, err := c.text.Cmd("playlistinfo")
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
 	pls, err = c.readPlaylist()
 	if err != nil || start < 0 || end < 0 {
 		return
@@ -258,37 +245,41 @@ func (c *Client) Delete(start, end int) os.Error {
 		return os.NewError("negative start index")
 	}
 	if end < 0 {
-		c.writeLine(fmt.Sprintf("delete %d", start))
-	} else {
-		c.writeLine(fmt.Sprintf("delete %d %d", start, end))
+		return c.okCmd("delete %d", start)
 	}
-	return c.readErr()
+	return c.okCmd("delete %d %d", start, end)
 }
 
 // DeleteId deletes the song identified by id.
 func (c *Client) DeleteId(id int) os.Error {
-	c.writeLine(fmt.Sprintf("deleteid %d", id))
-	return c.readErr()
+	return c.okCmd("deleteid %d", id)
 }
 
 // Add adds the file/directory uri to playlist. Directories add recursively.
 func (c *Client) Add(uri string) os.Error {
-	c.writeLine(fmt.Sprintf("add %q", uri))
-	return c.readErr()
+	return c.okCmd("add %q", uri)
 }
 
 // AddId adds the file/directory uri to playlist and returns the identity
 // id of the song added. If pos is positive, the song is added to position
 // pos.
-func (c *Client) AddId(uri string, pos int) (id int, err os.Error) {
+func (c *Client) AddId(uri string, pos int) (int, os.Error) {
+	var id uint
+	var err os.Error
 	if pos >= 0 {
-		c.writeLine(fmt.Sprintf("addid %q %d", uri, pos))
-	} else {
-		c.writeLine(fmt.Sprintf("addid %q", uri))
+		id, err = c.text.Cmd("addid %q %d", uri, pos)
 	}
-	attrs, err := c.getAttrs()
+	id, err = c.text.Cmd("addid %q", uri)
 	if err != nil {
-		return
+		return -1, err
+	}
+
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	attrs, err := c.readAttrs()
+	if err != nil {
+		return -1, err
 	}
 	tok, ok := attrs["Id"]
 	if !ok {
@@ -299,6 +290,5 @@ func (c *Client) AddId(uri string, pos int) (id int, err os.Error) {
 
 // Clear clears the current playlist.
 func (c *Client) Clear() os.Error {
-	c.writeLine("clear")
-	return c.readErr()
+	return c.okCmd("clear")
 }
