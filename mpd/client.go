@@ -135,7 +135,7 @@ func (c *Client) readOKLine() (err os.Error) {
 }
 
 func (c *Client) okCmd(format string, args ...interface{}) os.Error {
-	id, err := c.text.Cmd(format, args)
+	id, err := c.text.Cmd(format, args...)
 	if err != nil {
 		return err
 	}
