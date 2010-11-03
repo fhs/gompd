@@ -46,9 +46,8 @@ func (c *Client) Close() (err os.Error) {
 }
 
 func (c *Client) readPlaylist() (pls []Attrs, err os.Error) {
-	pls = make([]Attrs, 100)
+	pls = []Attrs{}
 
-	n := 0
 	for {
 		line, err := c.text.ReadLine()
 		if err != nil {
@@ -58,17 +57,9 @@ func (c *Client) readPlaylist() (pls []Attrs, err os.Error) {
 			break
 		}
 		if strings.HasPrefix(line, "file:") { // new song entry begins
-			n++
-			if n > len(pls) || n > cap(pls) {
-				pls1 := make([]Attrs, 2*cap(pls))
-				for k, a := range pls {
-					pls1[k] = a
-				}
-				pls = pls1
-			}
-			pls[n-1] = make(Attrs)
+			pls = append(pls, Attrs{})
 		}
-		if n == 0 {
+		if len(pls) == 0 {
 			return nil, textproto.ProtocolError("unexpected: " + line)
 		}
 		z := strings.Index(line, ": ")
@@ -76,9 +67,9 @@ func (c *Client) readPlaylist() (pls []Attrs, err os.Error) {
 			return nil, textproto.ProtocolError("can't parse line: " + line)
 		}
 		key := line[0:z]
-		pls[n-1][key] = line[z+2:]
+		pls[len(pls)-1][key] = line[z+2:]
 	}
-	return pls[0:n], nil
+	return pls, nil
 }
 
 func (c *Client) readAttrs() (attrs Attrs, err os.Error) {
