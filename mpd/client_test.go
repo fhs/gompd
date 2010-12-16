@@ -51,7 +51,7 @@ func TestPlaylistInfo(t *testing.T) {
 		}
 		pls1, err := cli.PlaylistInfo(i, -1)
 		if err != nil {
-			t.Errorf("Client.PlaylistInfo(%d, -1) = %v, %s need _, nil", pls1, err)
+			t.Errorf("Client.PlaylistInfo(%d, -1) = %v, %s need _, nil", i, pls1, err)
 		}
 		if !attrsEqual(pls[i], pls1[0]) {
 			t.Errorf("Inconsistent song attribute for song %d", i)
