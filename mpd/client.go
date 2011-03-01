@@ -45,6 +45,11 @@ func (c *Client) Close() (err os.Error) {
 	return
 }
 
+// Ping sends a no-op message to MPD. It's useful for keeping the connection alive.
+func (c *Client) Ping() os.Error {
+	return c.okCmd("ping")
+}
+
 func (c *Client) readPlaylist() (pls []Attrs, err os.Error) {
 	pls = []Attrs{}
 

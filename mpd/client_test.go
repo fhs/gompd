@@ -77,3 +77,13 @@ func TestCurrentSong(t *testing.T) {
 		return
 	}
 }
+
+func TestPing(t *testing.T) {
+	cli := localDial(t)
+	defer close(cli, t)
+
+	err := cli.Ping()
+	if err != nil {
+		t.Errorf("Client.Ping failed: %s\n", err)
+	}
+}
