@@ -1,5 +1,6 @@
-// Copyright © 2009 Fazlul Shahriar <fshahriar@gmail.com>.
-// See LICENSE file for license details.
+// Copyright 2009 The GoMPD Authors. All rights reserved.
+// Use of this source code is governed by the MIT
+// license that can be found in the LICENSE file.
 
 // This package provides the client side interface to MPD (Music Player Daemon).
 // The protocol reference can be found at http://www.musicpd.org/doc/protocol/index.html
