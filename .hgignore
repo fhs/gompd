@@ -5,4 +5,5 @@ syntax: glob
 [865].*
 _obj/
 _test/
+_testmain.go
 examples/status
