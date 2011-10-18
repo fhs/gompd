@@ -2,10 +2,9 @@
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
 
-package client_test
+package mpd
 
 import (
-	. "gompd.googlecode.com/hg/mpd"
 	"testing"
 )
 
