@@ -7,8 +7,8 @@
 package mpd
 
 import (
+	"errors"
 	"net/textproto"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -21,7 +21,7 @@ type Attrs map[string]string
 
 // Dial connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
 // on network network (e.g. "tcp").
-func Dial(network, addr string) (c *Client, err os.Error) {
+func Dial(network, addr string) (c *Client, err error) {
 	text, err := textproto.Dial(network, addr)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func Dial(network, addr string) (c *Client, err os.Error) {
 }
 
 // Close terminates the connection with MPD.
-func (c *Client) Close() (err os.Error) {
+func (c *Client) Close() (err error) {
 	if c.text != nil {
 		c.text.PrintfLine("close")
 		err = c.text.Close()
@@ -47,11 +47,11 @@ func (c *Client) Close() (err os.Error) {
 }
 
 // Ping sends a no-op message to MPD. It's useful for keeping the connection alive.
-func (c *Client) Ping() os.Error {
+func (c *Client) Ping() error {
 	return c.okCmd("ping")
 }
 
-func (c *Client) readPlaylist() (pls []Attrs, err os.Error) {
+func (c *Client) readPlaylist() (pls []Attrs, err error) {
 	pls = []Attrs{}
 
 	for {
@@ -78,7 +78,7 @@ func (c *Client) readPlaylist() (pls []Attrs, err os.Error) {
 	return pls, nil
 }
 
-func (c *Client) readAttrs() (attrs Attrs, err os.Error) {
+func (c *Client) readAttrs() (attrs Attrs, err error) {
 	attrs = make(Attrs)
 	for {
 		line, err := c.text.ReadLine()
@@ -99,7 +99,7 @@ func (c *Client) readAttrs() (attrs Attrs, err os.Error) {
 }
 
 // CurrentSong returns information about the current song in the playlist.
-func (c *Client) CurrentSong() (Attrs, os.Error) {
+func (c *Client) CurrentSong() (Attrs, error) {
 	id, err := c.text.Cmd("currentsong")
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (c *Client) CurrentSong() (Attrs, os.Error) {
 }
 
 // Status returns information about the current status of MPD.
-func (c *Client) Status() (Attrs, os.Error) {
+func (c *Client) Status() (Attrs, error) {
 	id, err := c.text.Cmd("status")
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func (c *Client) Status() (Attrs, os.Error) {
 	return c.readAttrs()
 }
 
-func (c *Client) readOKLine() (err os.Error) {
+func (c *Client) readOKLine() (err error) {
 	line, err := c.text.ReadLine()
 	if err != nil {
 		return
@@ -131,7 +131,7 @@ func (c *Client) readOKLine() (err os.Error) {
 	return textproto.ProtocolError("unexpected response: " + line)
 }
 
-func (c *Client) okCmd(format string, args ...interface{}) os.Error {
+func (c *Client) okCmd(format string, args ...interface{}) error {
 	id, err := c.text.Cmd(format, args...)
 	if err != nil {
 		return err
@@ -146,12 +146,12 @@ func (c *Client) okCmd(format string, args ...interface{}) os.Error {
 //
 
 // Next plays next song in the playlist.
-func (c *Client) Next() os.Error {
+func (c *Client) Next() error {
 	return c.okCmd("next")
 }
 
 // Pause pauses playback if pause is true; resumes playback otherwise.
-func (c *Client) Pause(pause bool) os.Error {
+func (c *Client) Pause(pause bool) error {
 	if pause {
 		return c.okCmd("pause 1")
 	}
@@ -160,7 +160,7 @@ func (c *Client) Pause(pause bool) os.Error {
 
 // Play starts playing the song at playlist position pos. If pos is negative,
 // start playing at the current position in the playlist.
-func (c *Client) Play(pos int) os.Error {
+func (c *Client) Play(pos int) error {
 	if pos < 0 {
 		c.okCmd("play")
 	}
@@ -169,7 +169,7 @@ func (c *Client) Play(pos int) os.Error {
 
 // PlayId plays the song identified by id. If id is negative, start playing
 // at the currect position in playlist.
-func (c *Client) PlayId(id int) os.Error {
+func (c *Client) PlayId(id int) error {
 	if id < 0 {
 		return c.okCmd("playid")
 	}
@@ -177,23 +177,23 @@ func (c *Client) PlayId(id int) os.Error {
 }
 
 // Previous plays previous song in the playlist.
-func (c *Client) Previous() os.Error {
+func (c *Client) Previous() error {
 	return c.okCmd("next")
 }
 
 // Seek seeks to the position time (in seconds) of the song at playlist position pos.
-func (c *Client) Seek(pos, time int) os.Error {
+func (c *Client) Seek(pos, time int) error {
 	return c.okCmd("seek %d %d", pos, time)
 }
 
 // SeekId is identical to Seek except the song is identified by it's id
 // (not position in playlist).
-func (c *Client) SeekId(id, time int) os.Error {
+func (c *Client) SeekId(id, time int) error {
 	return c.okCmd("seekid %d %d", id, time)
 }
 
 // Stop stops playback.
-func (c *Client) Stop() os.Error {
+func (c *Client) Stop() error {
 	return c.okCmd("stop")
 }
 
@@ -206,9 +206,9 @@ func (c *Client) Stop() os.Error {
 // playlist. If end is negative but start is positive, it does it for the
 // song at position start. If both start and end are positive, it does it
 // for positions in range [start, end).
-func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err os.Error) {
+func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err error) {
 	if start < 0 && end >= 0 {
-		return nil, os.NewError("negative start index")
+		return nil, errors.New("negative start index")
 	}
 	if start >= 0 && end < 0 {
 		id, err := c.text.Cmd("playlistinfo %d", start)
@@ -235,9 +235,9 @@ func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err os.Error) {
 // Delete deletes songs from playlist. If both start and end are positive,
 // it deletes those at positions in range [start, end). If end is negative,
 // it deletes the song at position start.
-func (c *Client) Delete(start, end int) os.Error {
+func (c *Client) Delete(start, end int) error {
 	if start < 0 {
-		return os.NewError("negative start index")
+		return errors.New("negative start index")
 	}
 	if end < 0 {
 		return c.okCmd("delete %d", start)
@@ -246,21 +246,21 @@ func (c *Client) Delete(start, end int) os.Error {
 }
 
 // DeleteId deletes the song identified by id.
-func (c *Client) DeleteId(id int) os.Error {
+func (c *Client) DeleteId(id int) error {
 	return c.okCmd("deleteid %d", id)
 }
 
 // Add adds the file/directory uri to playlist. Directories add recursively.
-func (c *Client) Add(uri string) os.Error {
+func (c *Client) Add(uri string) error {
 	return c.okCmd("add %q", uri)
 }
 
 // AddId adds the file/directory uri to playlist and returns the identity
 // id of the song added. If pos is positive, the song is added to position
 // pos.
-func (c *Client) AddId(uri string, pos int) (int, os.Error) {
+func (c *Client) AddId(uri string, pos int) (int, error) {
 	var id uint
-	var err os.Error
+	var err error
 	if pos >= 0 {
 		id, err = c.text.Cmd("addid %q %d", uri, pos)
 	}
@@ -284,6 +284,6 @@ func (c *Client) AddId(uri string, pos int) (int, os.Error) {
 }
 
 // Clear clears the current playlist.
-func (c *Client) Clear() os.Error {
+func (c *Client) Clear() error {
 	return c.okCmd("clear")
 }
