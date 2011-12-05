@@ -2,7 +2,7 @@
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
 
-// This package provides the client side interface to MPD (Music Player Daemon).
+// Package mpd provides the client side interface to MPD (Music Player Daemon).
 // The protocol reference can be found at http://www.musicpd.org/doc/protocol/index.html
 package mpd
 
