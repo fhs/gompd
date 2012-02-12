@@ -5,8 +5,8 @@
 package main
 
 import (
+	"code.google.com/p/gompd/mpd"
 	"fmt"
-	"gompd.googlecode.com/hg/mpd"
 	"os"
 	"time"
 )
