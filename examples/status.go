@@ -29,11 +29,11 @@ func currentSong(cli *mpd.Client) (song *Song) {
 	return
 }
 
-func main() {
+func printStatus() error {
 	//mpd.Chatty = true;
 	cli, err := mpd.Dial("tcp", "127.0.0.1:6600")
 	if err != nil {
-		goto err
+		return err
 	}
 	defer cli.Close()
 
@@ -42,7 +42,7 @@ func main() {
 	for {
 		status, err := cli.Status()
 		if err != nil {
-			goto err
+			return err
 		}
 		song := currentSong(cli)
 		if status["state"] == "play" {
@@ -56,8 +56,12 @@ func main() {
 		}
 		time.Sleep(1e9)
 	}
-	return
-err:
-	fmt.Fprintln(os.Stderr, err)
-	os.Exit(2)
+	return nil
+}
+
+func main() {
+	if err := printStatus(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
 }
