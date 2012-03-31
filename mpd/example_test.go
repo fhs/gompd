@@ -11,6 +11,7 @@ import (
 )
 
 func ExampleDial() {
+	// Connect to MPD server
 	conn, err := Dial("tcp", "localhost:6600")
 	if err != nil {
 		log.Fatalln(err)
@@ -19,6 +20,7 @@ func ExampleDial() {
 
 	line := ""
 	line1 := ""
+	// Loop printing the current status of MPD.
 	for {
 		status, err := conn.Status()
 		if err != nil {
