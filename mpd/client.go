@@ -205,6 +205,10 @@ func (c *Client) Stop() error {
 	return c.okCmd("stop")
 }
 
+func (c *Client) SetVolume(volume int) error {
+	return c.okCmd("setvol %d", volume)
+}
+
 //
 // Playlist related functions
 //
