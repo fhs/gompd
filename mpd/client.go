@@ -36,6 +36,14 @@ func Dial(network, addr string) (c *Client, err error) {
 	return &Client{text: text}, nil
 }
 
+func DialAuthenticated(network, addr, password string) (c *Client, err error) {
+	c, err = Dial(network, addr)
+	if err == nil && password != "" {
+		err = c.okCmd("password %s", password)
+	}
+	return c, err
+}
+
 // Close terminates the connection with MPD.
 func (c *Client) Close() (err error) {
 	if c.text != nil {
@@ -178,7 +186,7 @@ func (c *Client) PlayId(id int) error {
 
 // Previous plays previous song in the playlist.
 func (c *Client) Previous() error {
-	return c.okCmd("next")
+	return c.okCmd("previous")
 }
 
 // Seek seeks to the position time (in seconds) of the song at playlist position pos.
@@ -195,6 +203,10 @@ func (c *Client) SeekId(id, time int) error {
 // Stop stops playback.
 func (c *Client) Stop() error {
 	return c.okCmd("stop")
+}
+
+func (c *Client) SetVolume(volume int) error {
+	return c.okCmd("setvol %d", volume)
 }
 
 //
@@ -287,3 +299,36 @@ func (c *Client) AddId(uri string, pos int) (int, error) {
 func (c *Client) Clear() error {
 	return c.okCmd("clear")
 }
+
+// Database related commands
+
+// Retrieve the entire list of files
+func (c *Client) GetFiles() (files []string, err error) {
+	id, err := c.text.Cmd("list file")
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	for {
+		line, err := c.text.ReadLine();
+		if err != nil {
+			return nil, err
+		}
+		if line == "OK" {
+			break
+		}
+		if strings.HasPrefix(line, "file:") { // new song entry begins
+			path := line[6:]
+			files = append(files, path)
+		} else {
+			return nil, textproto.ProtocolError("unexpected: " + line)
+		}
+	}
+	if len(files) == 0 {
+		return nil, textproto.ProtocolError("No files returned from mpd.")
+	}
+	return files, err
+}
+
