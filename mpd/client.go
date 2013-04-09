@@ -186,7 +186,7 @@ func (c *Client) PlayId(id int) error {
 
 // Previous plays previous song in the playlist.
 func (c *Client) Previous() error {
-	return c.okCmd("next")
+	return c.okCmd("previous")
 }
 
 // Seek seeks to the position time (in seconds) of the song at playlist position pos.
