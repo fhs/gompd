@@ -36,6 +36,14 @@ func Dial(network, addr string) (c *Client, err error) {
 	return &Client{text: text}, nil
 }
 
+func DialAuthenticated(network, addr, password string) (c *Client, err error) {
+	c, err = Dial(network, addr)
+	if err == nil && password != "" {
+		err = c.okCmd("password %s", password)
+	}
+	return c, err
+}
+
 // Close terminates the connection with MPD.
 func (c *Client) Close() (err error) {
 	if c.text != nil {
