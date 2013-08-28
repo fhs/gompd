@@ -262,6 +262,11 @@ func (c *Client) DeleteId(id int) error {
 	return c.okCmd("deleteid %d", id)
 }
 
+// MoveId moves songid to position on the plyalist.
+func (c *Client) MoveId(songid, position int) error {
+	return c.okCmd("moveid %d %d", songid, position)
+}
+
 // Add adds the file/directory uri to playlist. Directories add recursively.
 func (c *Client) Add(uri string) error {
 	return c.okCmd("add %q", uri)
