@@ -248,7 +248,8 @@ func (cl *CommandList) End() error {
 			if aErr != nil {
 				return aErr
 			}
-			if rid, ridErr := strconv.Atoi(a["Id"]); ridErr != nil {
+			rid, ridErr := strconv.Atoi(a["Id"])
+			if ridErr != nil {
 				return ridErr
 			}
 			*(e.Value.(*command).promise.(*PromisedId)) = (PromisedId)(rid)
