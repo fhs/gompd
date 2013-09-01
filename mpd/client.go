@@ -86,14 +86,14 @@ func (c *Client) readPlaylist() (pls []Attrs, err error) {
 	return pls, nil
 }
 
-func (c *Client) readAttrs() (attrs Attrs, err error) {
+func (c *Client) readAttrs(terminator string) (attrs Attrs, err error) {
 	attrs = make(Attrs)
 	for {
 		line, err := c.text.ReadLine()
 		if err != nil {
 			return nil, err
 		}
-		if line == "OK" {
+		if line == terminator {
 			break
 		}
 		z := strings.Index(line, ": ")
@@ -114,7 +114,7 @@ func (c *Client) CurrentSong() (Attrs, error) {
 	}
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
-	return c.readAttrs()
+	return c.readAttrs("OK")
 }
 
 // Status returns information about the current status of MPD.
@@ -125,15 +125,15 @@ func (c *Client) Status() (Attrs, error) {
 	}
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
-	return c.readAttrs()
+	return c.readAttrs("OK")
 }
 
-func (c *Client) readOKLine() (err error) {
+func (c *Client) readOKLine(terminator string) (err error) {
 	line, err := c.text.ReadLine()
 	if err != nil {
 		return
 	}
-	if line == "OK" {
+	if line == terminator {
 		return nil
 	}
 	return textproto.ProtocolError("unexpected response: " + line)
@@ -146,7 +146,7 @@ func (c *Client) okCmd(format string, args ...interface{}) error {
 	}
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
-	return c.readOKLine()
+	return c.readOKLine("OK")
 }
 
 //
@@ -289,7 +289,7 @@ func (c *Client) AddId(uri string, pos int) (int, error) {
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
 
-	attrs, err := c.readAttrs()
+	attrs, err := c.readAttrs("OK")
 	if err != nil {
 		return -1, err
 	}
@@ -317,7 +317,7 @@ func (c *Client) GetFiles() (files []string, err error) {
 	defer c.text.EndResponse(id)
 
 	for {
-		line, err := c.text.ReadLine();
+		line, err := c.text.ReadLine()
 		if err != nil {
 			return nil, err
 		}
@@ -336,4 +336,3 @@ func (c *Client) GetFiles() (files []string, err error) {
 	}
 	return files, err
 }
-
