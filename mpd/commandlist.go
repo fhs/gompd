@@ -1,4 +1,4 @@
-// Copyright 2009 The GoMPD Authors. All rights reserved.
+// Copyright 2013 The GoMPD Authors. All rights reserved.
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
 
@@ -232,8 +232,7 @@ func (cl *CommandList) End() error {
 		switch e.Value.(*command).typeOf {
 
 		case cmd_no_return:
-			err := cl.client.readOKLine("list_OK")
-			if err != nil {
+			if err := cl.client.readOKLine("list_OK"); err != nil {
 				return err
 			}
 
@@ -251,14 +250,14 @@ func (cl *CommandList) End() error {
 			}
 			if rid, ridErr := strconv.Atoi(a["Id"]); ridErr != nil {
 				return ridErr
-			} else {
-				*(e.Value.(*command).promise.(*PromisedId)) = (PromisedId)(rid)
 			}
+			*(e.Value.(*command).promise.(*PromisedId)) = (PromisedId)(rid)
 
 		}
 	}
-	cerr := cl.client.readOKLine("OK")
-	if cerr != nil {
+
+	// Finalize the command list with the last OK:
+	if cerr := cl.client.readOKLine("OK"); cerr != nil {
 		return cerr
 	}
 
