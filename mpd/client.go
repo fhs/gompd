@@ -13,10 +13,12 @@ import (
 	"strings"
 )
 
+// Client represents a client connection to a MPD server.
 type Client struct {
 	text *textproto.Conn
 }
 
+// Attrs is a set of attributes returned by MPD.
 type Attrs map[string]string
 
 // Dial connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
@@ -36,6 +38,9 @@ func Dial(network, addr string) (c *Client, err error) {
 	return &Client{text: text}, nil
 }
 
+// DialAuthenticated connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
+// on network network (e.g. "tcp"). It then authenticates with MPD
+// using the plaintext password password if it's not empty.
 func DialAuthenticated(network, addr, password string) (c *Client, err error) {
 	c, err = Dial(network, addr)
 	if err == nil && password != "" {
@@ -176,7 +181,7 @@ func (c *Client) Play(pos int) error {
 }
 
 // PlayId plays the song identified by id. If id is negative, start playing
-// at the currect position in playlist.
+// at the current position in playlist.
 func (c *Client) PlayId(id int) error {
 	if id < 0 {
 		return c.okCmd("playid")
@@ -205,6 +210,7 @@ func (c *Client) Stop() error {
 	return c.okCmd("stop")
 }
 
+// SetVolume sets the volume to volume. The range of volume is 0-100.
 func (c *Client) SetVolume(volume int) error {
 	return c.okCmd("setvol %d", volume)
 }

@@ -33,10 +33,13 @@ type CommandList struct {
 	cmdQ   *list.List
 }
 
+// PromisedAttrs is a set of promised attributes (to be) returned by MPD.
 type PromisedAttrs Attrs
+
+// PromisedId is a promised identifier (to be) returned by MPD.
 type PromisedId int
 
-// Value is a convience method for ensuring that a promise
+// Value is a convenience method for ensuring that a promise
 // has been computed, returning the Attrs.
 func (pa *PromisedAttrs) Value() (Attrs, error) {
 	if len(*pa) == 0 {
@@ -45,7 +48,7 @@ func (pa *PromisedAttrs) Value() (Attrs, error) {
 	return (Attrs)(*pa), nil
 }
 
-// Value is a convience method for ensuring that a promise
+// Value is a convenience method for ensuring that a promise
 // has been computed, returning the ID.
 func (pi *PromisedId) Value() (int, error) {
 	if *pi == -1 {
