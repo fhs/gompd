@@ -1,0 +1,7 @@
+# This MPD config file exists only for testing purposes.
+# It's used by ../.travis.yml
+
+db_file "~/mpd.db"
+log_file "~/mpd.log"
+music_directory "/dev/null"
+bind_to_address "localhost:6600"
