@@ -4,4 +4,4 @@
 db_file "~/mpd.db"
 log_file "~/mpd.log"
 music_directory "/dev/null"
-bind_to_address "localhost:6600"
+bind_to_address "/tmp/mpd.socket"

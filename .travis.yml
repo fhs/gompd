@@ -2,6 +2,9 @@ language: go
 
 script: go test -v ./...
 
+env:
+ - MPD_HOST=/tmp/mpd.socket
+
 before_script:
  - sudo apt-get update -qq -y
  - sudo apt-get install mpd -y
