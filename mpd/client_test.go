@@ -5,12 +5,25 @@
 package mpd
 
 import (
+	"os"
 	"testing"
 )
 
 func localDial(t *testing.T) (cli *Client) {
-	addr := "127.0.0.1:6600"
-	cli, err := Dial("tcp", addr)
+	net := "unix"
+	addr := os.Getenv("MPD_HOST")
+	if addr == "" {
+		addr = "localhost"
+	}
+	if addr[0] != '/' {
+		net = "tcp"
+		port := os.Getenv("MPD_PORT")
+		if port == "" {
+			port = "6600"
+		}
+		addr += ":" + port
+	}
+	cli, err := Dial(net, addr)
 	if err != nil {
 		t.Fatalf("Dial(%q) = %v, %s want PTR, nil", addr, cli, err)
 	}
