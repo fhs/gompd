@@ -34,7 +34,14 @@ type CommandList struct {
 }
 
 // PromisedAttrs is a set of promised attributes (to be) returned by MPD.
-type PromisedAttrs Attrs
+type PromisedAttrs struct {
+	attrs    Attrs
+	computed bool
+}
+
+func newPromisedAttrs() *PromisedAttrs {
+	return &PromisedAttrs{attrs: make(Attrs), computed: false}
+}
 
 // PromisedId is a promised identifier (to be) returned by MPD.
 type PromisedId int
@@ -42,10 +49,10 @@ type PromisedId int
 // Value is a convenience method for ensuring that a promise
 // has been computed, returning the Attrs.
 func (pa *PromisedAttrs) Value() (Attrs, error) {
-	if len(*pa) == 0 {
+	if !pa.computed {
 		return nil, errors.New("This value has not been computed yet.")
 	}
-	return (Attrs)(*pa), nil
+	return pa.attrs, nil
 }
 
 // Value is a convenience method for ensuring that a promise
@@ -70,16 +77,16 @@ func (cl *CommandList) Ping() {
 
 // CurrentSong returns information about the current song in the playlist.
 func (cl *CommandList) CurrentSong() *PromisedAttrs {
-	pa := make(PromisedAttrs)
-	cl.cmdQ.PushBack(&command{"currentsong", &pa, cmd_attr_return})
-	return &pa
+	pa := newPromisedAttrs()
+	cl.cmdQ.PushBack(&command{"currentsong", pa, cmd_attr_return})
+	return pa
 }
 
 // Status returns information about the current status of MPD.
 func (cl *CommandList) Status() *PromisedAttrs {
-	pa := make(PromisedAttrs)
-	cl.cmdQ.PushBack(&command{"status", &pa, cmd_attr_return})
-	return &pa
+	pa := newPromisedAttrs()
+	cl.cmdQ.PushBack(&command{"status", pa, cmd_attr_return})
+	return pa
 }
 
 //
@@ -244,7 +251,9 @@ func (cl *CommandList) End() error {
 			if aErr != nil {
 				return aErr
 			}
-			*(e.Value.(*command).promise.(*PromisedAttrs)) = (PromisedAttrs)(a)
+			pa := e.Value.(*command).promise.(*PromisedAttrs)
+			pa.attrs = a
+			pa.computed = true
 
 		case cmd_id_return:
 			a, aErr := cl.client.readAttrs("list_OK")
