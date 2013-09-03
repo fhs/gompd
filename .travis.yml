@@ -1,0 +1,7 @@
+language: go
+
+script: go test -v ./...
+
+before_script:
+ - apt-get install -y mpd
+ - mpd
