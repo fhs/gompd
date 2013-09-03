@@ -3,5 +3,6 @@ language: go
 script: go test -v ./...
 
 before_script:
+ - sudo apt-get update -qq -y
  - sudo apt-get install mpd -y
  - mpd
