@@ -162,6 +162,15 @@ func (cl *CommandList) Random(random bool) {
 	}
 }
 
+// Enables reapeat mode, if repeat is true, disables it otherwise.
+func (cl *CommandList) Repeat(repeat bool) {
+	if repeat {
+		cl.cmdQ.PushBack(&command{"repeat 1", nil, cmd_no_return})
+	} else {
+		cl.cmdQ.PushBack(&command{"repeat 0", nil, cmd_no_return})
+	}
+}
+
 //
 // Playlist related functions
 //

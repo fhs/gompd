@@ -223,6 +223,14 @@ func (c *Client) Random(random bool) error {
 	return c.okCmd("random 0")
 }
 
+// Enables repeat mode, if repeat is true, disables it otherwise.
+func (c *Client) Repeat(repeat bool) error {
+	if repeat {
+		return c.okCmd("repeat 1")
+	}
+	return c.okCmd("repeat 0")
+}
+
 //
 // Playlist related functions
 //
