@@ -153,6 +153,15 @@ func (cl *CommandList) SetVolume(volume int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("setvol %d", volume), nil, cmd_no_return})
 }
 
+// Enables random playback, if random is true, disables it otherwise.
+func (cl *CommandList) Random(random bool) {
+	if random {
+		cl.cmdQ.PushBack(&command{"random 1", nil, cmd_no_return})
+	} else {
+		cl.cmdQ.PushBack(&command{"random 0", nil, cmd_no_return})
+	}
+}
+
 //
 // Playlist related functions
 //
