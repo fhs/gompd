@@ -223,6 +223,16 @@ func (cl *CommandList) Clear() {
 	cl.cmdQ.PushBack(&command{"clear", nil, cmd_no_return})
 }
 
+// Shuffle shuffles the tracks from postion start to position end in the
+// current playlist. If start or end is negative, the whole playlist is
+// shuffled.
+func (cl *CommandList) Shuffle(start, end int) {
+	if start > 0 && end > 0 {
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("shuffe %d:%d", start, end), nil, cmd_no_return})
+	}
+	cl.cmdQ.PushBack(&command{"shuffle", nil, cmd_no_return})
+}
+
 // End executes the command list.
 func (cl *CommandList) End() error {
 

@@ -327,6 +327,16 @@ func (c *Client) Clear() error {
 	return c.okCmd("clear")
 }
 
+// Shuffle shuffles the tracks from postion start to position end in the
+// current playlist. If start or end is negative, the whole playlist is
+// shuffled.
+func (c *Client) Shuffle(start, end int) error {
+	if start > 0 && end > 0 {
+		return c.okCmd("shuffle %d:%d", start, end)
+	}
+	return c.okCmd("shuffle")
+}
+
 // Database related commands
 
 // Retrieve the entire list of files
