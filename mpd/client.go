@@ -215,6 +215,22 @@ func (c *Client) SetVolume(volume int) error {
 	return c.okCmd("setvol %d", volume)
 }
 
+// Random enables random playback, if random is true, disables it otherwise.
+func (c *Client) Random(random bool) error {
+	if random {
+		return c.okCmd("random 1")
+	}
+	return c.okCmd("random 0")
+}
+
+// Repeat enables repeat mode, if repeat is true, disables it otherwise.
+func (c *Client) Repeat(repeat bool) error {
+	if repeat {
+		return c.okCmd("repeat 1")
+	}
+	return c.okCmd("repeat 0")
+}
+
 //
 // Playlist related functions
 //
