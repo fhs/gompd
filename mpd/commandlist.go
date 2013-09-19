@@ -153,7 +153,7 @@ func (cl *CommandList) SetVolume(volume int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("setvol %d", volume), nil, cmd_no_return})
 }
 
-// Enables random playback, if random is true, disables it otherwise.
+// Random enables random playback, if random is true, disables it otherwise.
 func (cl *CommandList) Random(random bool) {
 	if random {
 		cl.cmdQ.PushBack(&command{"random 1", nil, cmd_no_return})
@@ -162,7 +162,7 @@ func (cl *CommandList) Random(random bool) {
 	}
 }
 
-// Enables reapeat mode, if repeat is true, disables it otherwise.
+// Repeat enables reapeat mode, if repeat is true, disables it otherwise.
 func (cl *CommandList) Repeat(repeat bool) {
 	if repeat {
 		cl.cmdQ.PushBack(&command{"repeat 1", nil, cmd_no_return})

@@ -215,7 +215,7 @@ func (c *Client) SetVolume(volume int) error {
 	return c.okCmd("setvol %d", volume)
 }
 
-// Enables random playback, if random is true, disables it otherwise.
+// Random enables random playback, if random is true, disables it otherwise.
 func (c *Client) Random(random bool) error {
 	if random {
 		return c.okCmd("random 1")
@@ -223,7 +223,7 @@ func (c *Client) Random(random bool) error {
 	return c.okCmd("random 0")
 }
 
-// Enables repeat mode, if repeat is true, disables it otherwise.
+// Repeat enables repeat mode, if repeat is true, disables it otherwise.
 func (c *Client) Repeat(repeat bool) error {
 	if repeat {
 		return c.okCmd("repeat 1")
