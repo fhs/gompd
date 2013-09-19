@@ -331,10 +331,10 @@ func (c *Client) Clear() error {
 // current playlist. If start or end is negative, the whole playlist is
 // shuffled.
 func (c *Client) Shuffle(start, end int) error {
-	if start > 0 && end > 0 {
-		return c.okCmd("shuffle %d:%d", start, end)
+	if start < 0 || end < 0 {
+		return c.okCmd("shuffle")
 	}
-	return c.okCmd("shuffle")
+	return c.okCmd("shuffle %d:%d", start, end)
 }
 
 // Database related commands
