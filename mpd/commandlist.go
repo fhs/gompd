@@ -276,6 +276,11 @@ func (cl *CommandList) PlaylistMove(name string, id, pos int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistmove %q %d %d", name, id, pos), nil, cmd_no_return})
 }
 
+// Rename renames the playlist identified by name to newName.
+func (cl *CommandList) Rename(name, newName string) {
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistmove %q %q", name, newName), nil, cmd_no_return})
+}
+
 // End executes the command list.
 func (cl *CommandList) End() error {
 

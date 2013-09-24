@@ -473,3 +473,8 @@ func (c *Client) PlaylistDelete(name string, pos int) error {
 func (c *Client) PlaylistMove(name string, id, pos int) error {
 	return c.okCmd("playlistmove %q %d %d", name, id, pos)
 }
+
+// Rename renames the playlist identified by name to newName.
+func (c *Client) Rename(name, newName string) error {
+	return c.okCmd("rename %q %q", name, newName)
+}
