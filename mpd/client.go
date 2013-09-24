@@ -462,3 +462,8 @@ func (c *Client) PlaylistAdd(name, uri string) error {
 func (c *Client) PlaylistClear(name string) error {
 	return c.okCmd("playlistclear %q", name)
 }
+
+// PlaylistDelete deletes the song at position pos from the specified playlist.
+func (c *Client) PlaylistDelete(name string, pos int) error {
+	return c.okCmd("playlistdelete %q %d", name, pos)
+}
