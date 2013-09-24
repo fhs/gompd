@@ -430,3 +430,15 @@ func (c *Client) ListPlaylists() (playlists []Attrs, err error) {
 	}
 	return
 }
+
+// ListPlaylistInfo returns a list of attributes for songs in the specified
+// stored playlist.
+func (c *Client) ListPlaylistInfo(name string) ([]Attrs, error) {
+	id, err := c.text.Cmd("listplaylistinfo %s", name)
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	return c.readPlaylist()
+}
