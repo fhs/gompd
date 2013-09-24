@@ -375,7 +375,7 @@ func (c *Client) GetFiles() (files []string, err error) {
 //
 // The returned jobId identifies the update job, enqueued by MPD.
 func (c *Client) Update(uri string) (jobId int, err error) {
-	id, err := c.text.Cmd("update %s", uri)
+	id, err := c.text.Cmd("update %q", uri)
 	if err != nil {
 		return
 	}
@@ -434,7 +434,7 @@ func (c *Client) ListPlaylists() (playlists []Attrs, err error) {
 // ListPlaylistInfo returns a list of attributes for songs in the specified
 // stored playlist.
 func (c *Client) ListPlaylistInfo(name string) ([]Attrs, error) {
-	id, err := c.text.Cmd("listplaylistinfo %s", name)
+	id, err := c.text.Cmd("listplaylistinfo %q", name)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +447,13 @@ func (c *Client) ListPlaylistInfo(name string) ([]Attrs, error) {
 // If start and end are positive, only songs in this range are loaded.
 func (c *Client) Load(name string, start, end int) error {
 	if start < 0 || end < 0 {
-		return c.okCmd("load %s", name)
+		return c.okCmd("load %q", name)
 	}
-	return c.okCmd("load %s %d:%d", name, start, end)
+	return c.okCmd("load %q %d:%d", name, start, end)
+}
+
+// PlaylistAdd adds a song identified by uri to a stored playlist identified
+// by name.
+func (c *Client) PlaylistAdd(name, uri string) error {
+	return c.okCmd("playlistadd %q %q", name, uri)
 }

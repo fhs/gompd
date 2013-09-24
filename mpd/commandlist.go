@@ -238,7 +238,7 @@ func (cl *CommandList) Shuffle(start, end int) {
 // empty string, everything is updated.
 func (cl *CommandList) Update(uri string) (attrs *PromisedAttrs) {
 	attrs = newPromisedAttrs()
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("update %s", uri), attrs, cmd_attr_return})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("update %q", uri), attrs, cmd_attr_return})
 	return
 }
 
@@ -248,10 +248,16 @@ func (cl *CommandList) Update(uri string) (attrs *PromisedAttrs) {
 // If start and end are positive, only songs in this range are loaded.
 func (cl *CommandList) Load(name string, start, end int) {
 	if start < 0 || end < 0 {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("load %s", name), nil, cmd_no_return})
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("load %q", name), nil, cmd_no_return})
 	} else {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("load %s %d:%d", name, start, end), nil, cmd_no_return})
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("load %q %d:%d", name, start, end), nil, cmd_no_return})
 	}
+}
+
+// PlaylistAdd adds a song identified by uri to a stored playlist identified
+// by name.
+func (cl *CommandList) PlaylistAdd(name, uri string) {
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistadd %q %q", name, uri), nil, cmd_no_return})
 }
 
 // End executes the command list.
