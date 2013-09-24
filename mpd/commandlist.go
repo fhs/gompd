@@ -260,6 +260,11 @@ func (cl *CommandList) PlaylistAdd(name, uri string) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistadd %q %q", name, uri), nil, cmd_no_return})
 }
 
+// PlaylistClear clears the specified playlist.
+func (cl *CommandList) PlaylistClear(name string) {
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistclear %q", name), nil, cmd_no_return})
+}
+
 // End executes the command list.
 func (cl *CommandList) End() error {
 

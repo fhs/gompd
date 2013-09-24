@@ -457,3 +457,8 @@ func (c *Client) Load(name string, start, end int) error {
 func (c *Client) PlaylistAdd(name, uri string) error {
 	return c.okCmd("playlistadd %q %q", name, uri)
 }
+
+// PlaylistClear clears the specified playlist.
+func (c *Client) PlaylistClear(name string) error {
+	return c.okCmd("playlistclear %q", name)
+}
