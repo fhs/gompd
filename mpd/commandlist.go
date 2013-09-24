@@ -278,12 +278,17 @@ func (cl *CommandList) PlaylistMove(name string, id, pos int) {
 
 // Rename renames the playlist identified by name to newName.
 func (cl *CommandList) Rename(name, newName string) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistmove %q %q", name, newName), nil, cmd_no_return})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("rename %q %q", name, newName), nil, cmd_no_return})
 }
 
 // Rm removes the playlist identified by name from the playlist directory.
 func (cl *CommandList) Rm(name string) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("rm %q", name), nil, cmd_no_return})
+}
+
+// Save saves the current playlist as name in the playlist directory.
+func (cl *CommandList) Save(name string) {
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("save %q", name), nil, cmd_no_return})
 }
 
 // End executes the command list.

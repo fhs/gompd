@@ -483,3 +483,8 @@ func (c *Client) Rename(name, newName string) error {
 func (c *Client) Rm(name string) error {
 	return c.okCmd("rm %q", name)
 }
+
+// Save saves the current playlist as name in the playlist directory.
+func (c *Client) Save(name string) error {
+	return c.okCmd("save %q", name)
+}
