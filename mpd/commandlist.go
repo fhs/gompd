@@ -270,6 +270,12 @@ func (cl *CommandList) PlaylistDelete(name string, pos int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistdelete %q %d", name, pos), nil, cmd_no_return})
 }
 
+// Moves a song identified by id in a playlist identified by name to the
+// position pos.
+func (cl *CommandList) PlaylistMove(name string, id, pos int) {
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistmove %q %d %d", name, id, pos), nil, cmd_no_return})
+}
+
 // End executes the command list.
 func (cl *CommandList) End() error {
 

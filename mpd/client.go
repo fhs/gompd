@@ -467,3 +467,9 @@ func (c *Client) PlaylistClear(name string) error {
 func (c *Client) PlaylistDelete(name string, pos int) error {
 	return c.okCmd("playlistdelete %q %d", name, pos)
 }
+
+// Moves a song identified by id in a playlist identified by name to the
+// position pos.
+func (c *Client) PlaylistMove(name string, id, pos int) error {
+	return c.okCmd("playlistmove %q %d %d", name, id, pos)
+}
