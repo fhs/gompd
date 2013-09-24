@@ -478,3 +478,8 @@ func (c *Client) PlaylistMove(name string, id, pos int) error {
 func (c *Client) Rename(name, newName string) error {
 	return c.okCmd("rename %q %q", name, newName)
 }
+
+// Rm removes the playlist identified by name from the playlist directory.
+func (c *Client) Rm(name string) error {
+	return c.okCmd("rm %q", name)
+}
