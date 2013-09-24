@@ -242,6 +242,18 @@ func (cl *CommandList) Update(uri string) (attrs *PromisedAttrs) {
 	return
 }
 
+// Stored playlists related commands.
+
+// Load loads the specfied playlist into the current queue.
+// If start and end are positive, only songs in this range are loaded.
+func (cl *CommandList) Load(name string, start, end int) {
+	if start < 0 || end < 0 {
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("load %s", name), nil, cmd_no_return})
+	} else {
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("load %s %d:%d", name, start, end), nil, cmd_no_return})
+	}
+}
+
 // End executes the command list.
 func (cl *CommandList) End() error {
 

@@ -442,3 +442,12 @@ func (c *Client) ListPlaylistInfo(name string) ([]Attrs, error) {
 	defer c.text.EndResponse(id)
 	return c.readPlaylist()
 }
+
+// Load loads the specfied playlist into the current queue.
+// If start and end are positive, only songs in this range are loaded.
+func (c *Client) Load(name string, start, end int) error {
+	if start < 0 || end < 0 {
+		return c.okCmd("load %s", name)
+	}
+	return c.okCmd("load %s %d:%d", name, start, end)
+}
