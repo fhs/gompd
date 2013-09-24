@@ -368,3 +368,30 @@ func (c *Client) GetFiles() (files []string, err error) {
 	}
 	return files, err
 }
+
+// Update updates MPD's database: find new files, remove deleted files, update
+// modified files. uri is a particular directory or file to update. If it is an
+// empty string, everything is updated.
+//
+// The returned jobId identifies the update job, enqueued by MPD.
+func (c *Client) Update(uri string) (jobId int, err error) {
+	id, err := c.text.Cmd("update %s", uri)
+	if err != nil {
+		return
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	line, err := c.text.ReadLine()
+	if err != nil {
+		return
+	}
+	if !strings.HasPrefix(line, "updating_db: ") {
+		return 0, textproto.ProtocolError("unexpected response: " + line)
+	}
+	jobId, err = strconv.Atoi(line[13:])
+	if err != nil {
+		return
+	}
+	return jobId, c.readOKLine("OK")
+}

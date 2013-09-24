@@ -100,3 +100,17 @@ func TestPing(t *testing.T) {
 		t.Errorf("Client.Ping failed: %s\n", err)
 	}
 }
+
+func TestUpdate(t *testing.T) {
+	cli := localDial(t)
+	defer close(cli, t)
+
+	id, err := cli.Update("")
+	if err != nil {
+		t.Errorf("Client.Update failed: %s\n", err)
+		return
+	}
+	if id < 1 {
+		t.Errorf("job id is too small: %d\n", id)
+	}
+}

@@ -233,6 +233,15 @@ func (cl *CommandList) Shuffle(start, end int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("shuffe %d:%d", start, end), nil, cmd_no_return})
 }
 
+// Update updates MPD's database: find new files, remove deleted files, update
+// modified files. uri is a particular directory or file to update. If it is an
+// empty string, everything is updated.
+func (cl *CommandList) Update(uri string) (attrs *PromisedAttrs) {
+	attrs = newPromisedAttrs()
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("update %s", uri), attrs, cmd_attr_return})
+	return
+}
+
 // End executes the command list.
 func (cl *CommandList) End() error {
 
