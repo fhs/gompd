@@ -395,3 +395,38 @@ func (c *Client) Update(uri string) (jobId int, err error) {
 	}
 	return jobId, c.readOKLine("OK")
 }
+
+// Stored playlists related commands
+
+// ListPlaylists lists all stored playlists.
+func (c *Client) ListPlaylists() (playlists []Attrs, err error) {
+	id, err := c.text.Cmd("listplaylists")
+	if err != nil {
+		return
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	var line string
+	for {
+		line, err = c.text.ReadLine()
+		if err != nil {
+			return
+		}
+		if line == "OK" {
+			break
+		}
+		if strings.HasPrefix(line, "playlist: ") {
+			playlists = append(playlists, Attrs{})
+		}
+		if len(playlists) == 0 {
+			return nil, textproto.ProtocolError("unexpected response: " + line)
+		}
+		i := strings.Index(line, ": ")
+		if i < 0 {
+			return nil, textproto.ProtocolError("can't parse line: " + line)
+		}
+		playlists[len(playlists)-1][line[0:i]] = line[i+2:]
+	}
+	return
+}
