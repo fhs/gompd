@@ -357,15 +357,10 @@ func (c *Client) GetFiles() (files []string, err error) {
 		if line == "OK" {
 			break
 		}
-		if strings.HasPrefix(line, "file:") { // new song entry begins
-			path := line[6:]
-			files = append(files, path)
-		} else {
+		if !strings.HasPrefix(line, "file: ") {
 			return nil, textproto.ProtocolError("unexpected: " + line)
 		}
-	}
-	if len(files) == 0 {
-		return nil, textproto.ProtocolError("No files returned from mpd.")
+		files = append(files, line[6:])
 	}
 	return files, err
 }
