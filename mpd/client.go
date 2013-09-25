@@ -64,9 +64,8 @@ func (c *Client) Ping() error {
 	return c.okCmd("ping")
 }
 
-func (c *Client) readPlaylist() (pls []Attrs, err error) {
-	pls = []Attrs{}
-
+func (c *Client) readAttrsList(startKey string) (attrs []Attrs, err error) {
+	startKey += ": "
 	for {
 		line, err := c.text.ReadLine()
 		if err != nil {
@@ -75,20 +74,19 @@ func (c *Client) readPlaylist() (pls []Attrs, err error) {
 		if line == "OK" {
 			break
 		}
-		if strings.HasPrefix(line, "file:") { // new song entry begins
-			pls = append(pls, Attrs{})
+		if strings.HasPrefix(line, startKey) { // new entry begins
+			attrs = append(attrs, Attrs{})
 		}
-		if len(pls) == 0 {
+		if len(attrs) == 0 {
 			return nil, textproto.ProtocolError("unexpected: " + line)
 		}
-		z := strings.Index(line, ": ")
-		if z < 0 {
+		i := strings.Index(line, ": ")
+		if i < 0 {
 			return nil, textproto.ProtocolError("can't parse line: " + line)
 		}
-		key := line[0:z]
-		pls[len(pls)-1][key] = line[z+2:]
+		attrs[len(attrs)-1][line[0:i]] = line[i+2:]
 	}
-	return pls, nil
+	return attrs, nil
 }
 
 func (c *Client) readAttrs(terminator string) (attrs Attrs, err error) {
@@ -251,7 +249,7 @@ func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err error) {
 		}
 		c.text.StartResponse(id)
 		defer c.text.EndResponse(id)
-		return c.readPlaylist()
+		return c.readAttrsList("file")
 	}
 	id, err := c.text.Cmd("playlistinfo")
 	if err != nil {
@@ -259,7 +257,7 @@ func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err error) {
 	}
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
-	pls, err = c.readPlaylist()
+	pls, err = c.readAttrsList("file")
 	if err != nil || start < 0 || end < 0 {
 		return
 	}
@@ -399,36 +397,14 @@ func (c *Client) Update(uri string) (jobId int, err error) {
 // Stored playlists related commands
 
 // ListPlaylists lists all stored playlists.
-func (c *Client) ListPlaylists() (playlists []Attrs, err error) {
+func (c *Client) ListPlaylists() ([]Attrs, error) {
 	id, err := c.text.Cmd("listplaylists")
 	if err != nil {
-		return
+		return nil, err
 	}
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
-
-	var line string
-	for {
-		line, err = c.text.ReadLine()
-		if err != nil {
-			return
-		}
-		if line == "OK" {
-			break
-		}
-		if strings.HasPrefix(line, "playlist: ") {
-			playlists = append(playlists, Attrs{})
-		}
-		if len(playlists) == 0 {
-			return nil, textproto.ProtocolError("unexpected response: " + line)
-		}
-		i := strings.Index(line, ": ")
-		if i < 0 {
-			return nil, textproto.ProtocolError("can't parse line: " + line)
-		}
-		playlists[len(playlists)-1][line[0:i]] = line[i+2:]
-	}
-	return
+	return c.readAttrsList("playlist")
 }
 
 // ListPlaylistInfo returns a list of attributes for songs in the specified
@@ -440,11 +416,11 @@ func (c *Client) ListPlaylistInfo(name string) ([]Attrs, error) {
 	}
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
-	return c.readPlaylist()
+	return c.readAttrsList("file")
 }
 
 // Load loads the specfied playlist into the current queue.
-// If start and end are positive, only songs in this range are loaded.
+// If start and end are non-negative, only songs in this range are loaded.
 func (c *Client) Load(name string, start, end int) error {
 	if start < 0 || end < 0 {
 		return c.okCmd("load %q", name)
