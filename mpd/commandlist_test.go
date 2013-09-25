@@ -10,7 +10,7 @@ import (
 
 func TestCurrentSongPromise(t *testing.T) {
 	cli := localDial(t)
-	defer close(cli, t)
+	defer teardown(cli, t)
 
 	cmdl := cli.BeginCommandList()
 
@@ -28,7 +28,7 @@ func TestCurrentSongPromise(t *testing.T) {
 
 func TestCommandList(t *testing.T) {
 	cli := localDial(t)
-	defer close(cli, t)
+	defer teardown(cli, t)
 
 	// Normal command list:
 	cmdl := cli.BeginCommandList()

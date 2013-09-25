@@ -67,6 +67,24 @@ func (c *Client) Ping() error {
 	return c.okCmd("ping")
 }
 
+func (c *Client) readList(key string) (list []string, err error) {
+	key += ": "
+	for {
+		line, err := c.text.ReadLine()
+		if err != nil {
+			return nil, err
+		}
+		if line == "OK" {
+			break
+		}
+		if !strings.HasPrefix(line, key) {
+			return nil, textproto.ProtocolError("unexpected: " + line)
+		}
+		list = append(list, line[len(key):])
+	}
+	return
+}
+
 func (c *Client) readAttrsList(startKey string) (attrs []Attrs, err error) {
 	startKey += ": "
 	for {
@@ -153,6 +171,33 @@ func (c *Client) okCmd(format string, args ...interface{}) error {
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
 	return c.readOKLine("OK")
+}
+
+// Idle waits until there is a noteworthy change in one or more of MPD's
+// subsystems. See http://www.musicpd.org/doc/protocol/ch03.html#command_idle
+// for valid subsystems. If no subsystem is specified, all changes are
+// reported.
+//
+// This can be cancelled with NoIdle(). No other commands are allowed while
+// idling.
+func (c *Client) Idle(subsystems ...string) ([]string, error) {
+	id, err := c.text.Cmd("idle %s", strings.Join(subsystems, " "))
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	return c.readList("changed")
+}
+
+// NoIdle cancels an idling phase triggered by Idle().
+func (c *Client) NoIdle() (err error) {
+	id, err := c.text.Cmd("noidle")
+	if err == nil {
+		c.text.StartResponse(id)
+		c.text.EndResponse(id)
+	}
+	return
 }
 
 //
@@ -341,28 +386,14 @@ func (c *Client) Shuffle(start, end int) error {
 // Database related commands
 
 // Retrieve the entire list of files
-func (c *Client) GetFiles() (files []string, err error) {
+func (c *Client) GetFiles() ([]string, error) {
 	id, err := c.text.Cmd("list file")
 	if err != nil {
 		return nil, err
 	}
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
-
-	for {
-		line, err := c.text.ReadLine()
-		if err != nil {
-			return nil, err
-		}
-		if line == "OK" {
-			break
-		}
-		if !strings.HasPrefix(line, "file: ") {
-			return nil, textproto.ProtocolError("unexpected: " + line)
-		}
-		files = append(files, line[6:])
-	}
-	return files, err
+	return c.readList("file")
 }
 
 // Update updates MPD's database: find new files, remove deleted files, update

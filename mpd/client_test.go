@@ -7,6 +7,7 @@ package mpd
 import (
 	"os"
 	"testing"
+	"time"
 )
 
 func localDial(t *testing.T) (cli *Client) {
@@ -30,7 +31,7 @@ func localDial(t *testing.T) (cli *Client) {
 	return
 }
 
-func close(cli *Client, t *testing.T) {
+func teardown(cli *Client, t *testing.T) {
 	if err := cli.Close(); err != nil {
 		t.Errorf("Client.Close() = %s need nil", err)
 	}
@@ -50,7 +51,7 @@ func attrsEqual(left, right Attrs) bool {
 
 func TestPlaylistInfo(t *testing.T) {
 	cli := localDial(t)
-	defer close(cli, t)
+	defer teardown(cli, t)
 
 	pls, err := cli.PlaylistInfo(-1, -1)
 	if err != nil {
@@ -74,7 +75,7 @@ func TestPlaylistInfo(t *testing.T) {
 
 func TestCurrentSong(t *testing.T) {
 	cli := localDial(t)
-	defer close(cli, t)
+	defer teardown(cli, t)
 
 	attrs, err := cli.CurrentSong()
 	if err != nil {
@@ -93,7 +94,7 @@ func TestCurrentSong(t *testing.T) {
 
 func TestPing(t *testing.T) {
 	cli := localDial(t)
-	defer close(cli, t)
+	defer teardown(cli, t)
 
 	err := cli.Ping()
 	if err != nil {
@@ -103,7 +104,7 @@ func TestPing(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	cli := localDial(t)
-	defer close(cli, t)
+	defer teardown(cli, t)
 
 	id, err := cli.Update("")
 	if err != nil {
@@ -117,7 +118,7 @@ func TestUpdate(t *testing.T) {
 
 func TestPlaylistFunctions(t *testing.T) {
 	cli := localDial(t)
-	defer close(cli, t)
+	defer teardown(cli, t)
 
 	files, err := cli.GetFiles()
 	if err != nil {
@@ -259,4 +260,82 @@ func attrsListEqualKey(a, b []Attrs, key string) bool {
 		}
 	}
 	return true
+}
+
+func TestIdle(t *testing.T) {
+	cli1 := localDial(t)
+	defer teardown(cli1, t)
+
+	cli2 := localDial(t)
+	defer teardown(cli2, t)
+
+	resChn, errChn := mkIdleChn()
+
+	// Listen to player changes.
+	go idle(cli1, resChn, errChn, "player")
+	<-time.After(time.Second) // Give idle a chance.
+
+	// Trigger a player change.
+	if err := cli2.Play(-1); err != nil {
+		t.Errorf("Client.Play failed: %s\n", err)
+		return
+	}
+	if err := cli2.Stop(); err != nil {
+		t.Errorf("Client.Stop failed: %s\n", err)
+		return
+	}
+	select {
+	case res := <-resChn:
+		if len(res) < 1 || res[0] != "player" {
+			t.Errorf("Unexpected results: %v\n", res)
+			return
+		}
+	case err := <-errChn:
+		t.Errorf("Client.Idle failed: %s\n", err)
+		return
+	}
+}
+
+func TestNoIdle(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	resChn, errChn := mkIdleChn()
+
+	go idle(cli, resChn, errChn)
+	<-time.After(time.Second) // Give idle a chance.
+
+	if err := cli.NoIdle(); err != nil {
+		t.Errorf("Client.NoIdle failed: %s\n", err)
+		return
+	}
+	// Trigger a test event
+	if _, err := cli.Update(""); err != nil {
+		t.Errorf("Client.Update failed: %s\n", err)
+		return
+	}
+	select {
+	case res := <-resChn:
+		if len(res) > 0 {
+			t.Errorf("Unexpected results: %v\n", res)
+			return
+		}
+	case err := <-errChn:
+		t.Errorf("Client.Idle failed: %s\n", err)
+		return
+	}
+}
+
+func idle(cli *Client, resChn chan<- []string, errChn chan<- error, subsys ...string) {
+	if res, err := cli.Idle(subsys...); err != nil {
+		errChn <- err
+	} else {
+		resChn <- res
+	}
+	close(errChn)
+	close(resChn)
+}
+
+func mkIdleChn() (chan []string, chan error) {
+	return make(chan []string), make(chan error)
 }
