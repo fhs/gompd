@@ -21,6 +21,9 @@ type Client struct {
 // Attrs is a set of attributes returned by MPD.
 type Attrs map[string]string
 
+// Playlist is the name of a stored playlist.
+type Playlist string
+
 // Dial connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
 // on network network (e.g. "tcp").
 func Dial(network, addr string) (c *Client, err error) {
@@ -43,7 +46,7 @@ func Dial(network, addr string) (c *Client, err error) {
 // using the plaintext password password if it's not empty.
 func DialAuthenticated(network, addr, password string) (c *Client, err error) {
 	c, err = Dial(network, addr)
-	if err == nil && password != "" {
+	if err == nil && len(password) > 0 {
 		err = c.okCmd("password %s", password)
 	}
 	return c, err
@@ -64,9 +67,8 @@ func (c *Client) Ping() error {
 	return c.okCmd("ping")
 }
 
-func (c *Client) readPlaylist() (pls []Attrs, err error) {
-	pls = []Attrs{}
-
+func (c *Client) readAttrsList(startKey string) (attrs []Attrs, err error) {
+	startKey += ": "
 	for {
 		line, err := c.text.ReadLine()
 		if err != nil {
@@ -75,20 +77,19 @@ func (c *Client) readPlaylist() (pls []Attrs, err error) {
 		if line == "OK" {
 			break
 		}
-		if strings.HasPrefix(line, "file:") { // new song entry begins
-			pls = append(pls, Attrs{})
+		if strings.HasPrefix(line, startKey) { // new entry begins
+			attrs = append(attrs, Attrs{})
 		}
-		if len(pls) == 0 {
+		if len(attrs) == 0 {
 			return nil, textproto.ProtocolError("unexpected: " + line)
 		}
-		z := strings.Index(line, ": ")
-		if z < 0 {
+		i := strings.Index(line, ": ")
+		if i < 0 {
 			return nil, textproto.ProtocolError("can't parse line: " + line)
 		}
-		key := line[0:z]
-		pls[len(pls)-1][key] = line[z+2:]
+		attrs[len(attrs)-1][line[0:i]] = line[i+2:]
 	}
-	return pls, nil
+	return attrs, nil
 }
 
 func (c *Client) readAttrs(terminator string) (attrs Attrs, err error) {
@@ -251,7 +252,7 @@ func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err error) {
 		}
 		c.text.StartResponse(id)
 		defer c.text.EndResponse(id)
-		return c.readPlaylist()
+		return c.readAttrsList("file")
 	}
 	id, err := c.text.Cmd("playlistinfo")
 	if err != nil {
@@ -259,7 +260,7 @@ func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err error) {
 	}
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
-	pls, err = c.readPlaylist()
+	pls, err = c.readAttrsList("file")
 	if err != nil || start < 0 || end < 0 {
 		return
 	}
@@ -367,4 +368,103 @@ func (c *Client) GetFiles() (files []string, err error) {
 		return nil, textproto.ProtocolError("No files returned from mpd.")
 	}
 	return files, err
+}
+
+// Update updates MPD's database: find new files, remove deleted files, update
+// modified files. uri is a particular directory or file to update. If it is an
+// empty string, everything is updated.
+//
+// The returned jobId identifies the update job, enqueued by MPD.
+func (c *Client) Update(uri string) (jobId int, err error) {
+	id, err := c.text.Cmd("update %q", uri)
+	if err != nil {
+		return
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	line, err := c.text.ReadLine()
+	if err != nil {
+		return
+	}
+	if !strings.HasPrefix(line, "updating_db: ") {
+		return 0, textproto.ProtocolError("unexpected response: " + line)
+	}
+	jobId, err = strconv.Atoi(line[13:])
+	if err != nil {
+		return
+	}
+	return jobId, c.readOKLine("OK")
+}
+
+// Stored playlists related commands
+
+// ListPlaylists lists all stored playlists.
+func (c *Client) ListPlaylists() ([]Attrs, error) {
+	id, err := c.text.Cmd("listplaylists")
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	return c.readAttrsList("playlist")
+}
+
+// PlaylistContents returns a list of attributes for songs in the specified
+// stored playlist.
+func (c *Client) PlaylistContents(name Playlist) ([]Attrs, error) {
+	id, err := c.text.Cmd("listplaylistinfo %q", name)
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	return c.readAttrsList("file")
+}
+
+// PlaylistLoad loads the specfied playlist into the current queue.
+// If start and end are non-negative, only songs in this range are loaded.
+func (c *Client) PlaylistLoad(name Playlist, start, end int) error {
+	if start < 0 || end < 0 {
+		return c.okCmd("load %q", name)
+	}
+	return c.okCmd("load %q %d:%d", name, start, end)
+}
+
+// PlaylistAdd adds a song identified by uri to a stored playlist identified
+// by name.
+func (c *Client) PlaylistAdd(name Playlist, uri string) error {
+	return c.okCmd("playlistadd %q %q", name, uri)
+}
+
+// PlaylistClear clears the specified playlist.
+func (c *Client) PlaylistClear(name Playlist) error {
+	return c.okCmd("playlistclear %q", name)
+}
+
+// PlaylistDelete deletes the song at position pos from the specified playlist.
+func (c *Client) PlaylistDelete(name Playlist, pos int) error {
+	return c.okCmd("playlistdelete %q %d", name, pos)
+}
+
+// PlaylistMove moves a song identified by id in a playlist identified by name
+// to the position pos.
+func (c *Client) PlaylistMove(name Playlist, id, pos int) error {
+	return c.okCmd("playlistmove %q %d %d", name, id, pos)
+}
+
+// PlaylistRename renames the playlist identified by name to newName.
+func (c *Client) PlaylistRename(name, newName Playlist) error {
+	return c.okCmd("rename %q %q", name, newName)
+}
+
+// PlaylistRemove removes the playlist identified by name from the playlist
+// directory.
+func (c *Client) PlaylistRemove(name Playlist) error {
+	return c.okCmd("rm %q", name)
+}
+
+// PlaylistSave saves the current playlist as name in the playlist directory.
+func (c *Client) PlaylistSave(name Playlist) error {
+	return c.okCmd("save %q", name)
 }
