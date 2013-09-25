@@ -125,6 +125,7 @@ func TestPlaylistFunctions(t *testing.T) {
 		return
 	}
 	if len(files) < 2 {
+		t.Log("Add more then 1 audio file to your MPD to run this test.")
 		return
 	}
 	for i := 0; i < 2; i++ {
@@ -138,30 +139,16 @@ func TestPlaylistFunctions(t *testing.T) {
 		t.Errorf("Client.ListPlaylists failed: %s\n", err)
 		return
 	}
-	found := false
-	for _, pl := range attrs {
-		if pl["playlist"] == "Test Playlist" {
-			found = true
-			break
-		}
-	}
-	if !found {
+	if i := attrsListIndex(attrs, "playlist", "Test Playlist"); i < 0 {
 		t.Errorf("Couldn't find playlist \"Test Playlist\" in %v\n", attrs)
 		return
 	}
-	attrs, err = cli.ListPlaylistInfo("Test Playlist")
+	attrs, err = cli.PlaylistContents("Test Playlist")
 	if err != nil {
-		t.Errorf("Client.PlaylistInfo failed: %s\n", err)
+		t.Errorf("Client.PlaylistContents failed: %s\n", err)
 		return
 	}
-	found = false
-	for _, song := range attrs {
-		if song["file"] == files[0] {
-			found = true
-			break
-		}
-	}
-	if !found {
+	if i := attrsListIndex(attrs, "file", files[0]); i < 0 {
 		t.Errorf("Couldn't find song \"%s\" in %v", attrs)
 		return
 	}
@@ -169,24 +156,25 @@ func TestPlaylistFunctions(t *testing.T) {
 		t.Errorf("Client.PlaylistDelete failed: %s\n", err)
 		return
 	}
-	playlist, err := cli.ListPlaylistInfo("Test Playlist")
+	playlist, err := cli.PlaylistContents("Test Playlist")
 	if err != nil {
-		t.Errorf("Client.ListPlaylistInfo failed: %s\n", err)
+		t.Errorf("Client.PlaylistContents failed: %s\n", err)
 		return
 	}
-	if len(playlist) != len(attrs)-1 {
-		t.Errorf("Unxpected number of tracks in the playlist: %d != %d", len(playlist), len(attrs))
+	if !attrsListEqual(playlist, attrs[1:]) {
+		t.Errorf("Unexpected playlist: %v != %v", playlist, attrs[1:])
 		return
 	}
-	if err = cli.Rename("Test Playlist", "Test Playlist 2"); err != nil {
-		t.Errorf("Client.Rename failed: %s\n", err)
+	cli.PlaylistRemove("Test Playlist 2")
+	if err = cli.PlaylistRename("Test Playlist", "Test Playlist 2"); err != nil {
+		t.Errorf("Client.PlaylistRename failed: %s\n", err)
 		return
 	}
 	if err = cli.Clear(); err != nil {
 		t.Errorf("Client.Clear failed: %s\n", err)
 		return
 	}
-	if err = cli.Load("Test Playlist 2", -1, -1); err != nil {
+	if err = cli.PlaylistLoad("Test Playlist 2", -1, -1); err != nil {
 		t.Errorf("Client.Load failed: %s\n", err)
 		return
 	}
@@ -195,27 +183,25 @@ func TestPlaylistFunctions(t *testing.T) {
 		t.Errorf("Client.PlaylistInfo failed: %s\n", err)
 		return
 	}
-	for i, attr := range attrs {
-		if attr["file"] != playlist[i]["file"] {
-			t.Errorf("Unexpected file: %s != %s\n", attr["files"], playlist[i]["file"])
-			return
-		}
-	}
-	if err = cli.PlaylistClear("Test Playlist 2"); err != nil {
-		t.Errorf("Client.Clear failed: %s\n", err)
+	if !attrsListEqualKey(playlist, attrs, "file") {
+		t.Errorf("Unexpected playlist: %v != %v\n", attrs, playlist)
 		return
 	}
-	attrs, err = cli.ListPlaylistInfo("Test Playlist 2")
+	if err = cli.PlaylistClear("Test Playlist 2"); err != nil {
+		t.Errorf("Client.PlaylistClear failed: %s\n", err)
+		return
+	}
+	attrs, err = cli.PlaylistContents("Test Playlist 2")
 	if err != nil {
-		t.Errorf("Client.ListPlaylistInfo failed: %s\n", err)
+		t.Errorf("Client.PlaylistContents failed: %s\n", err)
 		return
 	}
 	if len(attrs) != 0 {
 		t.Errorf("Unexpected number of songs: %d != 0\n", len(attrs))
 		return
 	}
-	if err = cli.Rm("Test Playlist 2"); err != nil {
-		t.Errorf("Client.Rm failed: %s\n", err)
+	if err = cli.PlaylistRemove("Test Playlist 2"); err != nil {
+		t.Errorf("Client.PlaylistRemove failed: %s\n", err)
 		return
 	}
 	attrs, err = cli.ListPlaylists()
@@ -223,25 +209,54 @@ func TestPlaylistFunctions(t *testing.T) {
 		t.Errorf("Client.ListPlaylists failed: %s\n", err)
 		return
 	}
-	for _, attr := range attrs {
-		if attr["playlist"] == "Test Playlist 2" {
-			t.Errorf("Found playlist \"Test Playlist 2\" in %v\n", attrs)
-			return
-		}
-	}
-	if err = cli.Save("Test Playlist"); err != nil {
-		t.Errorf("Client.Save failed: %s\n", err)
+	if i := attrsListIndex(attrs, "playlist", "Test Playlist 2"); i > -1 {
+		t.Errorf("Found playlist \"Test Playlist 2\" in %v\n", attrs)
 		return
 	}
-	attrs, err = cli.ListPlaylistInfo("Test Playlist")
+	if err = cli.PlaylistSave("Test Playlist"); err != nil {
+		t.Errorf("Client.PlaylistSave failed: %s\n", err)
+		return
+	}
+	attrs, err = cli.PlaylistContents("Test Playlist")
 	if err != nil {
-		t.Errorf("Client.ListPlaylistInfo failed: %s\n", err)
+		t.Errorf("Client.PlaylistContents failed: %s\n", err)
 		return
 	}
+	if !attrsListEqual(playlist, attrs) {
+		t.Errorf("Unexpected playlist: %v != %v\n", attrs, playlist)
+		return
+	}
+}
+
+func attrsListIndex(attrs []Attrs, key, value string) int {
 	for i, attr := range attrs {
-		if attr["file"] != playlist[i]["file"] {
-			t.Errorf("Unexpected file: %s != %s\n", attr["files"], playlist[i]["file"])
-			return
+		if attr[key] == value {
+			return i
 		}
 	}
+	return -1
+}
+
+func attrsListEqual(a, b []Attrs) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, _ := range a {
+		if !attrsEqual(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func attrsListEqualKey(a, b []Attrs, key string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, _ := range a {
+		if a[i][key] != b[i][key] {
+			return false
+		}
+	}
+	return true
 }

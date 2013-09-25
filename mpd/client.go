@@ -21,6 +21,9 @@ type Client struct {
 // Attrs is a set of attributes returned by MPD.
 type Attrs map[string]string
 
+// Playlist is the name of a stored playlist.
+type Playlist string
+
 // Dial connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
 // on network network (e.g. "tcp").
 func Dial(network, addr string) (c *Client, err error) {
@@ -43,7 +46,7 @@ func Dial(network, addr string) (c *Client, err error) {
 // using the plaintext password password if it's not empty.
 func DialAuthenticated(network, addr, password string) (c *Client, err error) {
 	c, err = Dial(network, addr)
-	if err == nil && password != "" {
+	if err == nil && len(password) > 0 {
 		err = c.okCmd("password %s", password)
 	}
 	return c, err
@@ -407,9 +410,9 @@ func (c *Client) ListPlaylists() ([]Attrs, error) {
 	return c.readAttrsList("playlist")
 }
 
-// ListPlaylistInfo returns a list of attributes for songs in the specified
+// PlaylistContents returns a list of attributes for songs in the specified
 // stored playlist.
-func (c *Client) ListPlaylistInfo(name string) ([]Attrs, error) {
+func (c *Client) PlaylistContents(name Playlist) ([]Attrs, error) {
 	id, err := c.text.Cmd("listplaylistinfo %q", name)
 	if err != nil {
 		return nil, err
@@ -419,9 +422,9 @@ func (c *Client) ListPlaylistInfo(name string) ([]Attrs, error) {
 	return c.readAttrsList("file")
 }
 
-// Load loads the specfied playlist into the current queue.
+// PlaylistLoad loads the specfied playlist into the current queue.
 // If start and end are non-negative, only songs in this range are loaded.
-func (c *Client) Load(name string, start, end int) error {
+func (c *Client) PlaylistLoad(name Playlist, start, end int) error {
 	if start < 0 || end < 0 {
 		return c.okCmd("load %q", name)
 	}
@@ -430,37 +433,38 @@ func (c *Client) Load(name string, start, end int) error {
 
 // PlaylistAdd adds a song identified by uri to a stored playlist identified
 // by name.
-func (c *Client) PlaylistAdd(name, uri string) error {
+func (c *Client) PlaylistAdd(name Playlist, uri string) error {
 	return c.okCmd("playlistadd %q %q", name, uri)
 }
 
 // PlaylistClear clears the specified playlist.
-func (c *Client) PlaylistClear(name string) error {
+func (c *Client) PlaylistClear(name Playlist) error {
 	return c.okCmd("playlistclear %q", name)
 }
 
 // PlaylistDelete deletes the song at position pos from the specified playlist.
-func (c *Client) PlaylistDelete(name string, pos int) error {
+func (c *Client) PlaylistDelete(name Playlist, pos int) error {
 	return c.okCmd("playlistdelete %q %d", name, pos)
 }
 
-// Moves a song identified by id in a playlist identified by name to the
-// position pos.
-func (c *Client) PlaylistMove(name string, id, pos int) error {
+// PlaylistMove moves a song identified by id in a playlist identified by name
+// to the position pos.
+func (c *Client) PlaylistMove(name Playlist, id, pos int) error {
 	return c.okCmd("playlistmove %q %d %d", name, id, pos)
 }
 
-// Rename renames the playlist identified by name to newName.
-func (c *Client) Rename(name, newName string) error {
+// PlaylistRename renames the playlist identified by name to newName.
+func (c *Client) PlaylistRename(name, newName Playlist) error {
 	return c.okCmd("rename %q %q", name, newName)
 }
 
-// Rm removes the playlist identified by name from the playlist directory.
-func (c *Client) Rm(name string) error {
+// PlaylistRemove removes the playlist identified by name from the playlist
+// directory.
+func (c *Client) PlaylistRemove(name Playlist) error {
 	return c.okCmd("rm %q", name)
 }
 
-// Save saves the current playlist as name in the playlist directory.
-func (c *Client) Save(name string) error {
+// PlaylistSave saves the current playlist as name in the playlist directory.
+func (c *Client) PlaylistSave(name Playlist) error {
 	return c.okCmd("save %q", name)
 }
