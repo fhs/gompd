@@ -45,6 +45,7 @@ func (w *Watcher) watch(names ...string) {
 		switch changed, err := w.conn.idle(names...); {
 		case err == io.EOF:
 			// Connection closed.
+			w.Error <- err
 			return
 		case err != nil:
 			w.Error <- err
