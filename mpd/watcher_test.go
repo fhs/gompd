@@ -16,7 +16,7 @@ func localWatch(t *testing.T, names ...string) *Watcher {
 
 func TestWatcher(t *testing.T) {
 	w := localWatch(t, "player")
-	defer teardown(w, t)
+	defer w.Close()
 
 	c := localDial(t)
 	defer teardown(c, t)

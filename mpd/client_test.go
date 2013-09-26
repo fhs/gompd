@@ -9,10 +9,6 @@ import (
 	"testing"
 )
 
-type closer interface {
-	Close() error
-}
-
 func localAddr() (net, addr string) {
 	net = "unix"
 	addr = os.Getenv("MPD_HOST")
@@ -39,9 +35,9 @@ func localDial(t *testing.T) *Client {
 	return cli
 }
 
-func teardown(c closer, t *testing.T) {
-	if err := c.Close(); err != nil {
-		t.Errorf("Close() = %s need nil", err)
+func teardown(cli *Client, t *testing.T) {
+	if err := cli.Close(); err != nil {
+		t.Errorf("Client.Close() = %s need nil", err)
 	}
 }
 
