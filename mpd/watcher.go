@@ -12,10 +12,10 @@ type Subsystem string
 
 // Watcher represents a MPD client connection that can be watched for events.
 type Watcher struct {
-	conn *Client          // client connection to MPD
-	names chan []string   //
-	Event chan Subsystem  // event channel
-	Error chan error      // error channel
+	conn  *Client        // client connection to MPD
+	names chan []string  // channel to set new subsystems to watch
+	Event chan Subsystem // event channel
+	Error chan error     // error channel
 }
 
 // NewWatcher connects to MPD server and watches for changes in subsystems
@@ -36,7 +36,7 @@ func NewWatcher(net, addr, passwd string, names ...string) (w *Watcher, err erro
 	return
 }
 
-func(w *Watcher) watch(names ...string) {
+func (w *Watcher) watch(names ...string) {
 	defer close(w.names)
 	defer close(w.Event)
 	defer close(w.Error)
