@@ -9,28 +9,33 @@ import (
 	"testing"
 )
 
-func localDial(t *testing.T) (cli *Client) {
-	net := "unix"
-	addr := os.Getenv("MPD_HOST")
-	if addr == "" {
-		addr = "localhost"
+func localAddr() (net, addr string) {
+	net = "unix"
+	addr = os.Getenv("MPD_HOST")
+	if len(addr) > 0 && addr[0] == '/' {
+		return
 	}
-	if addr[0] != '/' {
-		net = "tcp"
-		port := os.Getenv("MPD_PORT")
-		if port == "" {
-			port = "6600"
-		}
-		addr += ":" + port
+	net = "tcp"
+	if len(addr) == 0 {
+		addr = "127.0.0.1"
 	}
+	port := os.Getenv("MPD_PORT")
+	if len(port) == 0 {
+		port = "6600"
+	}
+	return net, addr + ":" + port
+}
+
+func localDial(t *testing.T) *Client {
+	net, addr := localAddr()
 	cli, err := Dial(net, addr)
 	if err != nil {
 		t.Fatalf("Dial(%q) = %v, %s want PTR, nil", addr, cli, err)
 	}
-	return
+	return cli
 }
 
-func close(cli *Client, t *testing.T) {
+func teardown(cli *Client, t *testing.T) {
 	if err := cli.Close(); err != nil {
 		t.Errorf("Client.Close() = %s need nil", err)
 	}
@@ -50,7 +55,7 @@ func attrsEqual(left, right Attrs) bool {
 
 func TestPlaylistInfo(t *testing.T) {
 	cli := localDial(t)
-	defer close(cli, t)
+	defer teardown(cli, t)
 
 	pls, err := cli.PlaylistInfo(-1, -1)
 	if err != nil {
@@ -74,7 +79,7 @@ func TestPlaylistInfo(t *testing.T) {
 
 func TestCurrentSong(t *testing.T) {
 	cli := localDial(t)
-	defer close(cli, t)
+	defer teardown(cli, t)
 
 	attrs, err := cli.CurrentSong()
 	if err != nil {
@@ -93,7 +98,7 @@ func TestCurrentSong(t *testing.T) {
 
 func TestPing(t *testing.T) {
 	cli := localDial(t)
-	defer close(cli, t)
+	defer teardown(cli, t)
 
 	err := cli.Ping()
 	if err != nil {
@@ -103,7 +108,7 @@ func TestPing(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	cli := localDial(t)
-	defer close(cli, t)
+	defer teardown(cli, t)
 
 	id, err := cli.Update("")
 	if err != nil {
@@ -117,7 +122,7 @@ func TestUpdate(t *testing.T) {
 
 func TestPlaylistFunctions(t *testing.T) {
 	cli := localDial(t)
-	defer close(cli, t)
+	defer teardown(cli, t)
 
 	files, err := cli.GetFiles()
 	if err != nil {

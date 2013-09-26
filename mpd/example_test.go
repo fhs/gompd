@@ -42,3 +42,28 @@ func ExampleDial() {
 		time.Sleep(1e9)
 	}
 }
+
+func ExampleNewWatcher() {
+	w, err := NewWatcher("tcp", ":6600", "")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer w.Close()
+
+	// Log errors.
+	go func() {
+		for err := range w.Error {
+			log.Println("Error:", err)
+		}
+	}()
+
+	// Log events.
+	go func() {
+		for subsystem := range w.Event {
+			log.Println("Changed subsystem:", subsystem)
+		}
+	}()
+
+	// Do other stuff...
+	time.Sleep(3 * time.Minute)
+}
