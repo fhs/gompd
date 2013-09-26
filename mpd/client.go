@@ -173,14 +173,7 @@ func (c *Client) okCmd(format string, args ...interface{}) error {
 	return c.readOKLine("OK")
 }
 
-// Idle waits until there is a noteworthy change in one or more of MPD's
-// subsystems. See http://www.musicpd.org/doc/protocol/ch03.html#command_idle
-// for valid subsystems. If no subsystem is specified, all changes are
-// reported.
-//
-// This can be cancelled with NoIdle(). No other commands are allowed while
-// idling.
-func (c *Client) Idle(subsystems ...string) ([]string, error) {
+func (c *Client) idle(subsystems ...string) ([]string, error) {
 	id, err := c.text.Cmd("idle %s", strings.Join(subsystems, " "))
 	if err != nil {
 		return nil, err
@@ -190,8 +183,7 @@ func (c *Client) Idle(subsystems ...string) ([]string, error) {
 	return c.readList("changed")
 }
 
-// NoIdle cancels an idling phase triggered by Idle().
-func (c *Client) NoIdle() (err error) {
+func (c *Client) noIdle() (err error) {
 	id, err := c.text.Cmd("noidle")
 	if err == nil {
 		c.text.StartResponse(id)
