@@ -72,12 +72,12 @@ func (w *Watcher) Subsystems(names ...string) {
 }
 
 // Close closes the connection to MPD and stops watching for events.
-func (w *Watcher) Close() {
+func (w *Watcher) Close() error {
 	w.done <- true
 	w.conn.noIdle()
 
 	<-w.done // wait for idle to finish and channels to close
 	// At this point, watch goroutine has ended,
 	// so it's safe to close connection.
-	w.conn.Close()
+	return w.conn.Close()
 }
