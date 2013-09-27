@@ -26,7 +26,7 @@ type command struct {
 }
 
 // CommandList is for batch/mass MPD commands.
-// See http://mpd.wikia.com/wiki/Music_Player_Daemon_Command_List
+// See http://www.musicpd.org/doc/protocol/ch01s04.html
 // for more details.
 type CommandList struct {
 	client *Client
