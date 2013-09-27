@@ -68,6 +68,7 @@ func (c *Client) Ping() error {
 }
 
 func (c *Client) readList(key string) (list []string, err error) {
+	list = []string{}
 	key += ": "
 	for {
 		line, err := c.text.ReadLine()
@@ -86,6 +87,7 @@ func (c *Client) readList(key string) (list []string, err error) {
 }
 
 func (c *Client) readAttrsList(startKey string) (attrs []Attrs, err error) {
+	attrs = []Attrs{}
 	startKey += ": "
 	for {
 		line, err := c.text.ReadLine()
