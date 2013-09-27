@@ -21,9 +21,6 @@ type Client struct {
 // Attrs is a set of attributes returned by MPD.
 type Attrs map[string]string
 
-// Playlist is the name of a stored playlist.
-type Playlist string
-
 // Dial connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
 // on network network (e.g. "tcp").
 func Dial(network, addr string) (c *Client, err error) {
@@ -432,7 +429,7 @@ func (c *Client) ListPlaylists() ([]Attrs, error) {
 
 // PlaylistContents returns a list of attributes for songs in the specified
 // stored playlist.
-func (c *Client) PlaylistContents(name Playlist) ([]Attrs, error) {
+func (c *Client) PlaylistContents(name string) ([]Attrs, error) {
 	id, err := c.text.Cmd("listplaylistinfo %q", name)
 	if err != nil {
 		return nil, err
@@ -444,7 +441,7 @@ func (c *Client) PlaylistContents(name Playlist) ([]Attrs, error) {
 
 // PlaylistLoad loads the specfied playlist into the current queue.
 // If start and end are non-negative, only songs in this range are loaded.
-func (c *Client) PlaylistLoad(name Playlist, start, end int) error {
+func (c *Client) PlaylistLoad(name string, start, end int) error {
 	if start < 0 || end < 0 {
 		return c.okCmd("load %q", name)
 	}
@@ -453,38 +450,38 @@ func (c *Client) PlaylistLoad(name Playlist, start, end int) error {
 
 // PlaylistAdd adds a song identified by uri to a stored playlist identified
 // by name.
-func (c *Client) PlaylistAdd(name Playlist, uri string) error {
+func (c *Client) PlaylistAdd(name string, uri string) error {
 	return c.okCmd("playlistadd %q %q", name, uri)
 }
 
 // PlaylistClear clears the specified playlist.
-func (c *Client) PlaylistClear(name Playlist) error {
+func (c *Client) PlaylistClear(name string) error {
 	return c.okCmd("playlistclear %q", name)
 }
 
 // PlaylistDelete deletes the song at position pos from the specified playlist.
-func (c *Client) PlaylistDelete(name Playlist, pos int) error {
+func (c *Client) PlaylistDelete(name string, pos int) error {
 	return c.okCmd("playlistdelete %q %d", name, pos)
 }
 
 // PlaylistMove moves a song identified by id in a playlist identified by name
 // to the position pos.
-func (c *Client) PlaylistMove(name Playlist, id, pos int) error {
+func (c *Client) PlaylistMove(name string, id, pos int) error {
 	return c.okCmd("playlistmove %q %d %d", name, id, pos)
 }
 
 // PlaylistRename renames the playlist identified by name to newName.
-func (c *Client) PlaylistRename(name, newName Playlist) error {
+func (c *Client) PlaylistRename(name, newName string) error {
 	return c.okCmd("rename %q %q", name, newName)
 }
 
 // PlaylistRemove removes the playlist identified by name from the playlist
 // directory.
-func (c *Client) PlaylistRemove(name Playlist) error {
+func (c *Client) PlaylistRemove(name string) error {
 	return c.okCmd("rm %q", name)
 }
 
 // PlaylistSave saves the current playlist as name in the playlist directory.
-func (c *Client) PlaylistSave(name Playlist) error {
+func (c *Client) PlaylistSave(name string) error {
 	return c.okCmd("save %q", name)
 }

@@ -246,7 +246,7 @@ func (cl *CommandList) Update(uri string) (attrs *PromisedAttrs) {
 
 // PlaylistLoad loads the specfied playlist into the current queue.
 // If start and end are non-negative, only songs in this range are loaded.
-func (cl *CommandList) PlaylistLoad(name Playlist, start, end int) {
+func (cl *CommandList) PlaylistLoad(name string, start, end int) {
 	if start < 0 || end < 0 {
 		cl.cmdQ.PushBack(&command{fmt.Sprintf("load %q", name), nil, cmd_no_return})
 	} else {
@@ -256,39 +256,39 @@ func (cl *CommandList) PlaylistLoad(name Playlist, start, end int) {
 
 // PlaylistAdd adds a song identified by uri to a stored playlist identified
 // by name.
-func (cl *CommandList) PlaylistAdd(name Playlist, uri string) {
+func (cl *CommandList) PlaylistAdd(name string, uri string) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistadd %q %q", name, uri), nil, cmd_no_return})
 }
 
 // PlaylistClear clears the specified playlist.
-func (cl *CommandList) PlaylistClear(name Playlist) {
+func (cl *CommandList) PlaylistClear(name string) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistclear %q", name), nil, cmd_no_return})
 }
 
 // PlaylistDelete deletes the song at position pos from the specified playlist.
-func (cl *CommandList) PlaylistDelete(name Playlist, pos int) {
+func (cl *CommandList) PlaylistDelete(name string, pos int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistdelete %q %d", name, pos), nil, cmd_no_return})
 }
 
 // PlaylistMove moves a song identified by id in a playlist identified by name
 // to the position pos.
-func (cl *CommandList) PlaylistMove(name Playlist, id, pos int) {
+func (cl *CommandList) PlaylistMove(name string, id, pos int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistmove %q %d %d", name, id, pos), nil, cmd_no_return})
 }
 
 // PlaylistRename renames the playlist identified by name to newName.
-func (cl *CommandList) PlaylistRename(name, newName Playlist) {
+func (cl *CommandList) PlaylistRename(name, newName string) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("rename %q %q", name, newName), nil, cmd_no_return})
 }
 
 // PlaylistRemove removes the playlist identified by name from the playlist
 // directory.
-func (cl *CommandList) PlaylistRemove(name Playlist) {
+func (cl *CommandList) PlaylistRemove(name string) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("rm %q", name), nil, cmd_no_return})
 }
 
 // PlaylistSave saves the current playlist as name in the playlist directory.
-func (cl *CommandList) PlaylistSave(name Playlist) {
+func (cl *CommandList) PlaylistSave(name string) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("save %q", name), nil, cmd_no_return})
 }
 
