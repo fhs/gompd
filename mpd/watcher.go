@@ -6,7 +6,8 @@ package mpd
 // Watcher represents a MPD client connection that can be watched for events.
 type Watcher struct {
 	conn  *Client       // client connection to MPD
-	done  chan bool     // channel to stop the loop
+	exit  chan bool     // channel used to ask loop to terminate
+	done  chan bool     // channel indicating loop has terminated
 	names chan []string // channel to set new subsystems to watch
 	Event chan string   // event channel
 	Error chan error    // error channel
@@ -26,9 +27,10 @@ func NewWatcher(net, addr, passwd string, names ...string) (w *Watcher, err erro
 		conn:  conn,
 		Event: make(chan string),
 		Error: make(chan error),
+		done:  make(chan bool),
 		// Buffer channels to avoid race conditions with noIdle
 		names: make(chan []string, 1),
-		done:  make(chan bool, 1),
+		exit:  make(chan bool, 1),
 	}
 	go w.watch(names...)
 	return
@@ -48,7 +50,7 @@ func (w *Watcher) watch(names ...string) {
 		}
 
 		select {
-		case <-w.done:
+		case <-w.exit:
 			return
 		case names = <-w.names:
 			// Received new subsystems to watch.
@@ -62,6 +64,7 @@ func (w *Watcher) closeChans() {
 	close(w.Event)
 	close(w.Error)
 	close(w.names)
+	close(w.exit)
 	close(w.done)
 }
 
@@ -73,7 +76,7 @@ func (w *Watcher) Subsystems(names ...string) {
 
 // Close closes the connection to MPD and stops watching for events.
 func (w *Watcher) Close() error {
-	w.done <- true
+	w.exit <- true
 	w.conn.noIdle()
 
 	<-w.done // wait for idle to finish and channels to close
