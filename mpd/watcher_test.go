@@ -48,7 +48,7 @@ func TestWatcher(t *testing.T) {
 		return
 	}
 
-	w.Subsystems("update", "mixer")
+	w.Subsystems("update", "playlist")
 	if err := c.Play(-1); err != nil {
 		t.Errorf("Client.Play failed: %s\n", err)
 		return

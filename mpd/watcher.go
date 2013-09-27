@@ -23,19 +23,19 @@ func NewWatcher(net, addr, passwd string, names ...string) (w *Watcher, err erro
 		return
 	}
 	w = &Watcher{
-		conn: conn,
-		done: make(chan bool),
-		// Buffered channel to avoid race conditions in Watcher.Subsystems().
+		conn:  conn,
+		Event: make(chan string),
+		Error: make(chan error),
+		// Buffer channels to avoid race conditions with noIdle
 		names: make(chan []string, 1),
-		Event: make(chan string, 100),
-		Error: make(chan error, 100),
+		done:  make(chan bool, 1),
 	}
 	go w.watch(names...)
 	return
 }
 
 func (w *Watcher) watch(names ...string) {
-	defer w.close()
+	defer w.closeChans()
 
 	for {
 		switch changed, err := w.conn.idle(names...); {
@@ -58,12 +58,11 @@ func (w *Watcher) watch(names ...string) {
 	}
 }
 
-func (w *Watcher) close() {
-	close(w.done)
-	close(w.names)
+func (w *Watcher) closeChans() {
 	close(w.Event)
 	close(w.Error)
-	w.conn.Close()
+	close(w.names)
+	close(w.done)
 }
 
 // Subsystems changes the subsystems to watch for.
@@ -74,6 +73,11 @@ func (w *Watcher) Subsystems(names ...string) {
 
 // Close closes the connection to MPD and stops watching for events.
 func (w *Watcher) Close() {
-	w.conn.noIdle() // This is a little bit racy.
-	w.done <- true  // Let's see, if it's a problem in practice.
+	w.done <- true
+	w.conn.noIdle()
+
+	<-w.done // wait for idle to finish and channels to close
+	// At this point, watch goroutine has ended,
+	// so it's safe to close connection.
+	w.conn.Close()
 }
