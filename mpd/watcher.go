@@ -39,8 +39,23 @@ func NewWatcher(net, addr, passwd string, names ...string) (w *Watcher, err erro
 func (w *Watcher) watch(names ...string) {
 	defer w.closeChans()
 
+	// We can block in two places: idle and sending on Event/Error channels.
+	// We need to check w.exit and w.names after each.
 	for {
-		switch changed, err := w.conn.idle(names...); {
+		changed, err := w.conn.idle(names...)
+		select {
+		case <-w.exit:
+			// If Close interrupted idle with a noidle, and we don't
+			// exit now, we will block trying to send on Event/Error.
+			return
+		case names = <-w.names:
+			// Received new subsystems to watch. Ignore results.
+			changed = []string{}
+			err = nil
+		default: // continue
+		}
+
+		switch {
 		case err != nil:
 			w.Error <- err
 		default:
@@ -48,14 +63,16 @@ func (w *Watcher) watch(names ...string) {
 				w.Event <- name
 			}
 		}
-
 		select {
 		case <-w.exit:
+			// If Close unblocks us from sending on Event/Error channels,
+			// we should exit now because noidle might be sent out
+			// before we get to idle.
 			return
 		case names = <-w.names:
-			// Received new subsystems to watch.
-		default:
-			// continue
+			// If method Subsystems unblocks us from sending on Event/Error
+			// channels, the next call to idle should be on the new names.
+		default: // continue
 		}
 	}
 }
@@ -68,15 +85,30 @@ func (w *Watcher) closeChans() {
 	close(w.done)
 }
 
-// Subsystems changes the subsystems to watch for.
+func (w *Watcher) consume() {
+	for {
+		select {
+		case <-w.Event:
+		case <-w.Error:
+		default:
+			return
+		}
+	}
+}
+
+// Subsystems interrupts watching current subsystems, consumes all
+// outstanding values from Event and Error channels, and then
+// changes the subsystems to watch for to names.
 func (w *Watcher) Subsystems(names ...string) {
 	w.names <- names
+	w.consume()
 	w.conn.noIdle()
 }
 
-// Close closes the connection to MPD and stops watching for events.
+// Close closes Event and Error channels, and the connection to MPD server.
 func (w *Watcher) Close() error {
 	w.exit <- true
+	w.consume()
 	w.conn.noIdle()
 
 	<-w.done // wait for idle to finish and channels to close

@@ -313,7 +313,7 @@ func (c *Client) Delete(start, end int) error {
 	if end < 0 {
 		return c.okCmd("delete %d", start)
 	}
-	return c.okCmd("delete %d %d", start, end)
+	return c.okCmd("delete %d:%d", start, end)
 }
 
 // DeleteId deletes the song identified by id.
