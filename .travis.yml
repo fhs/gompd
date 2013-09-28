@@ -2,4 +2,4 @@ language: go
 
 script:
  - go install -v ./...
- - go get -v code.google.com/p/gompd/mpd
+ - test `gofmt -l . | wc -l` = 0
