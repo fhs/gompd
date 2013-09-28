@@ -246,7 +246,7 @@ func attrsListEqual(a, b []Attrs) bool {
 	if len(a) != len(b) {
 		return false
 	}
-	for i, _ := range a {
+	for i := range a {
 		if !attrsEqual(a[i], b[i]) {
 			return false
 		}
@@ -258,7 +258,7 @@ func attrsListEqualKey(a, b []Attrs, key string) bool {
 	if len(a) != len(b) {
 		return false
 	}
-	for i, _ := range a {
+	for i := range a {
 		if a[i][key] != b[i][key] {
 			return false
 		}
