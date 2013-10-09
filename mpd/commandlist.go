@@ -202,7 +202,7 @@ func (cl *CommandList) MoveId(songid, position int) {
 
 // Add adds the file/directory uri to playlist. Directories add recursively.
 func (cl *CommandList) Add(uri string) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("add %q", uri), nil, cmd_no_return})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("add %s", quote(uri)), nil, cmd_no_return})
 }
 
 // AddId adds the file/directory uri to playlist and returns the identity
@@ -211,9 +211,9 @@ func (cl *CommandList) Add(uri string) {
 func (cl *CommandList) AddId(uri string, pos int) *PromisedId {
 	var id PromisedId = -1
 	if pos >= 0 {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("addid %q %d", uri, pos), &id, cmd_id_return})
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("addid %s %d", quote(uri), pos), &id, cmd_id_return})
 	} else {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("addid %q", uri), &id, cmd_id_return})
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("addid %s", quote(uri)), &id, cmd_id_return})
 	}
 	return &id
 }
@@ -238,7 +238,7 @@ func (cl *CommandList) Shuffle(start, end int) {
 // empty string, everything is updated.
 func (cl *CommandList) Update(uri string) (attrs *PromisedAttrs) {
 	attrs = newPromisedAttrs()
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("update %q", uri), attrs, cmd_attr_return})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("update %s", quote(uri)), attrs, cmd_attr_return})
 	return
 }
 
@@ -248,48 +248,48 @@ func (cl *CommandList) Update(uri string) (attrs *PromisedAttrs) {
 // If start and end are non-negative, only songs in this range are loaded.
 func (cl *CommandList) PlaylistLoad(name string, start, end int) {
 	if start < 0 || end < 0 {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("load %q", name), nil, cmd_no_return})
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("load %s", quote(name)), nil, cmd_no_return})
 	} else {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("load %q %d:%d", name, start, end), nil, cmd_no_return})
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("load %s %d:%d", quote(name), start, end), nil, cmd_no_return})
 	}
 }
 
 // PlaylistAdd adds a song identified by uri to a stored playlist identified
 // by name.
 func (cl *CommandList) PlaylistAdd(name string, uri string) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistadd %q %q", name, uri), nil, cmd_no_return})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistadd %s %s", quote(name), quote(uri)), nil, cmd_no_return})
 }
 
 // PlaylistClear clears the specified playlist.
 func (cl *CommandList) PlaylistClear(name string) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistclear %q", name), nil, cmd_no_return})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistclear %s", quote(name)), nil, cmd_no_return})
 }
 
 // PlaylistDelete deletes the song at position pos from the specified playlist.
 func (cl *CommandList) PlaylistDelete(name string, pos int) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistdelete %q %d", name, pos), nil, cmd_no_return})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistdelete %s %d", quote(name), pos), nil, cmd_no_return})
 }
 
 // PlaylistMove moves a song identified by id in a playlist identified by name
 // to the position pos.
 func (cl *CommandList) PlaylistMove(name string, id, pos int) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistmove %q %d %d", name, id, pos), nil, cmd_no_return})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistmove %s %d %d", quote(name), id, pos), nil, cmd_no_return})
 }
 
 // PlaylistRename renames the playlist identified by name to newName.
 func (cl *CommandList) PlaylistRename(name, newName string) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("rename %q %q", name, newName), nil, cmd_no_return})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("rename %s %s", quote(name), quote(newName)), nil, cmd_no_return})
 }
 
 // PlaylistRemove removes the playlist identified by name from the playlist
 // directory.
 func (cl *CommandList) PlaylistRemove(name string) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("rm %q", name), nil, cmd_no_return})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("rm %s", quote(name)), nil, cmd_no_return})
 }
 
 // PlaylistSave saves the current playlist as name in the playlist directory.
 func (cl *CommandList) PlaylistSave(name string) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("save %q", name), nil, cmd_no_return})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("save %s", quote(name)), nil, cmd_no_return})
 }
 
 // End executes the command list.

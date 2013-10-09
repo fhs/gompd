@@ -265,3 +265,19 @@ func attrsListEqualKey(a, b []Attrs, key string) bool {
 	}
 	return true
 }
+
+var quoteTests = []struct {
+	s, q string
+}{
+	{`test.ogg`, `"test.ogg"`},
+	{`test "song".ogg`, `"test \"song\".ogg"`},
+	{`04 - ILL - DECAYED LOVE　feat.℃iel.ogg`, `"04 - ILL - DECAYED LOVE　feat.℃iel.ogg"`},
+}
+
+func TestQuote(t *testing.T) {
+	for _, test := range quoteTests {
+		if q := quote(test.s); q != test.q {
+			t.Errorf("quote(%s) returned %s; expected %s\n", test.s, q, test.q)
+		}
+	}
+}

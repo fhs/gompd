@@ -13,6 +13,24 @@ import (
 	"strings"
 )
 
+// Quote quotes strings in the format understood by MPD.
+// See: http://git.musicpd.org/cgit/master/mpd.git/tree/src/util/Tokenizer.cxx
+func quote(s string) string {
+	q := make([]byte, 2+2*len(s))
+	i := 0
+	q[i], i = '"', i+1
+	for _, c := range []byte(s) {
+		if c == '"' {
+			q[i], i = '\\', i+1
+			q[i], i = '"', i+1
+		} else {
+			q[i], i = c, i+1
+		}
+	}
+	q[i], i = '"', i+1
+	return string(q[:i])
+}
+
 // Client represents a client connection to a MPD server.
 type Client struct {
 	text *textproto.Conn
@@ -328,7 +346,7 @@ func (c *Client) MoveId(songid, position int) error {
 
 // Add adds the file/directory uri to playlist. Directories add recursively.
 func (c *Client) Add(uri string) error {
-	return c.okCmd("add %q", uri)
+	return c.okCmd("add %s", quote(uri))
 }
 
 // AddId adds the file/directory uri to playlist and returns the identity
@@ -338,9 +356,9 @@ func (c *Client) AddId(uri string, pos int) (int, error) {
 	var id uint
 	var err error
 	if pos >= 0 {
-		id, err = c.text.Cmd("addid %q %d", uri, pos)
+		id, err = c.text.Cmd("addid %s %d", quote(uri), pos)
 	}
-	id, err = c.text.Cmd("addid %q", uri)
+	id, err = c.text.Cmd("addid %s", quote(uri))
 	if err != nil {
 		return -1, err
 	}
@@ -393,7 +411,7 @@ func (c *Client) GetFiles() ([]string, error) {
 //
 // The returned jobId identifies the update job, enqueued by MPD.
 func (c *Client) Update(uri string) (jobId int, err error) {
-	id, err := c.text.Cmd("update %q", uri)
+	id, err := c.text.Cmd("update %s", quote(uri))
 	if err != nil {
 		return
 	}
@@ -430,7 +448,7 @@ func (c *Client) ListPlaylists() ([]Attrs, error) {
 // PlaylistContents returns a list of attributes for songs in the specified
 // stored playlist.
 func (c *Client) PlaylistContents(name string) ([]Attrs, error) {
-	id, err := c.text.Cmd("listplaylistinfo %q", name)
+	id, err := c.text.Cmd("listplaylistinfo %s", quote(name))
 	if err != nil {
 		return nil, err
 	}
@@ -443,45 +461,45 @@ func (c *Client) PlaylistContents(name string) ([]Attrs, error) {
 // If start and end are non-negative, only songs in this range are loaded.
 func (c *Client) PlaylistLoad(name string, start, end int) error {
 	if start < 0 || end < 0 {
-		return c.okCmd("load %q", name)
+		return c.okCmd("load %s", quote(name))
 	}
-	return c.okCmd("load %q %d:%d", name, start, end)
+	return c.okCmd("load %s %d:%d", quote(name), start, end)
 }
 
 // PlaylistAdd adds a song identified by uri to a stored playlist identified
 // by name.
 func (c *Client) PlaylistAdd(name string, uri string) error {
-	return c.okCmd("playlistadd %q %q", name, uri)
+	return c.okCmd("playlistadd %s %s", quote(name), quote(uri))
 }
 
 // PlaylistClear clears the specified playlist.
 func (c *Client) PlaylistClear(name string) error {
-	return c.okCmd("playlistclear %q", name)
+	return c.okCmd("playlistclear %s", quote(name))
 }
 
 // PlaylistDelete deletes the song at position pos from the specified playlist.
 func (c *Client) PlaylistDelete(name string, pos int) error {
-	return c.okCmd("playlistdelete %q %d", name, pos)
+	return c.okCmd("playlistdelete %s %d", quote(name), pos)
 }
 
 // PlaylistMove moves a song identified by id in a playlist identified by name
 // to the position pos.
 func (c *Client) PlaylistMove(name string, id, pos int) error {
-	return c.okCmd("playlistmove %q %d %d", name, id, pos)
+	return c.okCmd("playlistmove %s %d %d", quote(name), id, pos)
 }
 
 // PlaylistRename renames the playlist identified by name to newName.
 func (c *Client) PlaylistRename(name, newName string) error {
-	return c.okCmd("rename %q %q", name, newName)
+	return c.okCmd("rename %s %s", quote(name), quote(newName))
 }
 
 // PlaylistRemove removes the playlist identified by name from the playlist
 // directory.
 func (c *Client) PlaylistRemove(name string) error {
-	return c.okCmd("rm %q", name)
+	return c.okCmd("rm %s", quote(name))
 }
 
 // PlaylistSave saves the current playlist as name in the playlist directory.
 func (c *Client) PlaylistSave(name string) error {
-	return c.okCmd("save %q", name)
+	return c.okCmd("save %s", quote(name))
 }
