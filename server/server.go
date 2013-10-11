@@ -12,7 +12,6 @@ import (
 	"net/textproto"
 	"os"
 	"strconv"
-	"sync"
 )
 
 func unquote(line string, start int) (string, int) {
@@ -100,7 +99,6 @@ type Server struct {
 	index           map[string]int // maps URI to database index
 	playlists       map[string]*Playlist
 	currentPlaylist *Playlist
-	mu              sync.RWMutex
 }
 
 func NewServer() *Server {
@@ -269,19 +267,13 @@ func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string) (close
 		s.playlists[name] = NewPlaylist()
 		s.playlists[name].Append(s.currentPlaylist)
 	case "play", "stop":
-		s.mu.Lock()
 		s.state = args[0]
-		s.mu.Lock()
 	case "pause":
-		s.mu.Lock()
 		if s.state != "stop" {
 			s.state = args[0]
 		}
-		s.mu.Lock()
 	case "status":
-		s.mu.RLock()
 		state := s.state
-		s.mu.RLock()
 		p.PrintfLine("state: %s", state)
 	case "update":
 		p.PrintfLine("updating_db: 1")
