@@ -154,7 +154,7 @@ func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string, okLine
 				return
 			}
 			p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(i)]["file"])
-			return
+			break
 		}
 		for i := 0; i < s.currentPlaylist.Len(); i++ {
 			p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(i)]["file"])
@@ -287,6 +287,22 @@ func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string, okLine
 		s.playlists[name].Append(s.currentPlaylist)
 	case "play", "stop":
 		s.state = args[0]
+	case "next":
+		if s.pos < 0 || s.pos >= s.currentPlaylist.Len() {
+			s.pos = 0
+			break
+		}
+		s.pos = (s.pos + 1) % s.currentPlaylist.Len()
+	case "previous":
+		if s.pos < 0 || s.pos >= s.currentPlaylist.Len() {
+			s.pos = 0
+			break
+		}
+		if s.pos == 0 {
+			s.pos = s.currentPlaylist.Len() - 1
+			break
+		}
+		s.pos -= 1
 	case "pause":
 		if s.state != "stop" {
 			s.state = args[0]
@@ -304,9 +320,9 @@ func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string, okLine
 		if s.pos >= s.currentPlaylist.Len() {
 			s.pos = 0
 		}
-		p.PrintfLine("file: %s", s.currentPlaylist.At(s.pos))
+		p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(s.pos)]["file"])
 	default:
-		p.PrintfLine("ACK {} unknown command %q\n", args[0])
+		p.PrintfLine("ACK {} unknown command %q", args[0])
 		log.Printf("unknown command: %s\n", args[0])
 		return
 	}
@@ -340,7 +356,7 @@ func (s *Server) readRequest(p *textproto.Conn) (*Request, error) {
 	args := parseArgs(line)
 	if len(args) > 0 && args[0] == "command_list_ok_begin" {
 		cmdList := make([][]string, 0)
-		for len(args) == 0 || args[0] != "command_list_end" {
+		for {
 			line, err := p.ReadLine()
 			if err == io.EOF {
 				return nil, err
@@ -349,7 +365,11 @@ func (s *Server) readRequest(p *textproto.Conn) (*Request, error) {
 				log.Printf("reading request failed: %v\n", err)
 				return nil, err
 			}
-			cmdList = append(cmdList, parseArgs(line))
+			args = parseArgs(line)
+			if len(args) > 0 && args[0] == "command_list_end" {
+				break
+			}
+			cmdList = append(cmdList, args)
 		}
 		return &Request{typ: CommandListOk, cmdList: cmdList}, nil
 	}
