@@ -99,6 +99,7 @@ type Server struct {
 	index           map[string]int // maps URI to database index
 	playlists       map[string]*Playlist
 	currentPlaylist *Playlist
+	pos             int // in currentPlaylist
 }
 
 func NewServer() *Server {
@@ -108,6 +109,7 @@ func NewServer() *Server {
 		index:           make(map[string]int, 100),
 		playlists:       make(map[string]*Playlist),
 		currentPlaylist: NewPlaylist(),
+		pos:             0,
 	}
 	for i := 0; i < len(s.database); i++ {
 		s.database[i] = make(Attrs, 5)
@@ -118,10 +120,7 @@ func NewServer() *Server {
 	return s
 }
 
-func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string) (closed bool) {
-	p.StartResponse(id)
-	defer p.EndResponse(id)
-
+func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string, okLine string) (cmdOk, closed bool) {
 	if len(args) < 1 {
 		p.PrintfLine("No command given")
 		return
@@ -148,6 +147,15 @@ func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string) (close
 			p.PrintfLine("playlist: %s", k)
 		}
 	case "playlistinfo":
+		if len(args) >= 2 {
+			i, err := strconv.Atoi(args[1])
+			if err != nil {
+				ack("invalid song position")
+				return
+			}
+			p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(i)]["file"])
+			return
+		}
 		for i := 0; i < s.currentPlaylist.Len(); i++ {
 			p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(i)]["file"])
 		}
@@ -253,6 +261,17 @@ func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string) (close
 		s.currentPlaylist.Append(pl)
 	case "clear":
 		s.currentPlaylist.Clear()
+	case "add":
+		if len(args) != 2 {
+			ack("wrong number of arguments")
+			return
+		}
+		i, ok := s.index[args[1]]
+		if !ok {
+			ack("URI not found")
+			return
+		}
+		s.currentPlaylist.Add(i)
 	case "save":
 		if len(args) != 2 {
 			ack("wrong number of arguments")
@@ -278,11 +297,63 @@ func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string) (close
 	case "update":
 		p.PrintfLine("updating_db: 1")
 	case "ping":
+	case "currentsong":
+		if s.currentPlaylist.Len() == 0 {
+			break
+		}
+		if s.pos >= s.currentPlaylist.Len() {
+			s.pos = 0
+		}
+		p.PrintfLine("file: %s", s.currentPlaylist.At(s.pos))
 	default:
+		p.PrintfLine("ACK {} unknown command %q\n", args[0])
 		log.Printf("unknown command: %s\n", args[0])
+		return
 	}
-	p.PrintfLine("OK")
+	cmdOk = true
+	p.PrintfLine(okLine)
 	return
+}
+
+type RequestType int
+
+const (
+	CommandListOk RequestType = iota
+	Simple
+)
+
+type Request struct {
+	typ     RequestType
+	args    []string
+	cmdList [][]string
+}
+
+func (s *Server) readRequest(p *textproto.Conn) (*Request, error) {
+	line, err := p.ReadLine()
+	if err == io.EOF {
+		return nil, err
+	}
+	if err != nil {
+		log.Printf("reading request failed: %v\n", err)
+		return nil, err
+	}
+	args := parseArgs(line)
+	if len(args) > 0 && args[0] == "command_list_ok_begin" {
+		cmdList := make([][]string, 0)
+		for len(args) == 0 || args[0] != "command_list_end" {
+			line, err := p.ReadLine()
+			if err == io.EOF {
+				return nil, err
+			}
+			if err != nil {
+				log.Printf("reading request failed: %v\n", err)
+				return nil, err
+			}
+			cmdList = append(cmdList, parseArgs(line))
+		}
+		return &Request{typ: CommandListOk, cmdList: cmdList}, nil
+	}
+	return &Request{typ: Simple, args: args}, nil
 }
 
 func (s *Server) handleConnection(p *textproto.Conn) {
@@ -293,24 +364,40 @@ func (s *Server) handleConnection(p *textproto.Conn) {
 	p.PrintfLine("OK MPD gompd0.1")
 	p.EndResponse(id)
 
+	defer p.Close()
 	for {
 		id := p.Next()
 		p.StartRequest(id)
-		line, err := p.ReadLine()
-		p.EndRequest(id)
-		if err == io.EOF {
-			break
-		}
+		req, err := s.readRequest(p)
 		if err != nil {
-			log.Printf("reading request failed: %v\n", err)
-			break
+			return
 		}
-		args := parseArgs(line)
-		if s.writeResponse(p, id, args) {
-			break
+		p.EndRequest(id)
+
+		p.StartResponse(id)
+		switch req.typ {
+		case CommandListOk:
+			var ok, closed bool
+			ok = true
+			for _, args := range req.cmdList {
+				ok, closed = s.writeResponse(p, id, args, "list_OK")
+				if closed {
+					return
+				}
+				if !ok {
+					break
+				}
+			}
+			if ok {
+				p.PrintfLine("OK")
+			}
+		case Simple:
+			if _, closed := s.writeResponse(p, id, req.args, "OK"); closed {
+				return
+			}
 		}
+		p.EndResponse(id)
 	}
-	p.Close()
 }
 
 func main() {
