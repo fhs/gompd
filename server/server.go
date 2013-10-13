@@ -57,27 +57,27 @@ func parseArgs(line string) (args []string) {
 
 type Attrs map[string]string
 
-type Playlist struct {
+type playlist struct {
 	songs []int
 }
 
-func NewPlaylist() *Playlist {
-	return &Playlist{songs: make([]int, 0)}
+func newPlaylist() *playlist {
+	return &playlist{songs: make([]int, 0)}
 }
 
-func (p *Playlist) At(i int) int {
+func (p *playlist) At(i int) int {
 	return p.songs[i]
 }
 
-func (p *Playlist) Len() int {
+func (p *playlist) Len() int {
 	return len(p.songs)
 }
 
-func (p *Playlist) Add(song int) {
+func (p *playlist) Add(song int) {
 	p.songs = append(p.songs, song)
 }
 
-func (p *Playlist) Delete(i int) {
+func (p *playlist) Delete(i int) {
 	if i < 0 || i >= len(p.songs) {
 		return
 	}
@@ -85,39 +85,39 @@ func (p *Playlist) Delete(i int) {
 	p.songs = p.songs[:len(p.songs)-1]
 }
 
-func (p *Playlist) Clear() {
+func (p *playlist) Clear() {
 	p.songs = p.songs[:0]
 }
 
-func (p *Playlist) Append(q *Playlist) {
+func (p *playlist) Append(q *playlist) {
 	// TODO: do at most one allocation
 	for i := 0; i < q.Len(); i++ {
 		p.Add(q.At(i))
 	}
 }
 
-type Server struct {
+type server struct {
 	state           string
 	database        []Attrs        // database of songs
 	index           map[string]int // maps URI to database index
-	playlists       map[string]*Playlist
-	currentPlaylist *Playlist
+	playlists       map[string]*playlist
+	currentPlaylist *playlist
 	pos             int // in currentPlaylist
 	idleEventc      chan string
-	idleStartc      chan *IdleRequest
+	idleStartc      chan *idleRequest
 	idleEndc        chan uint
 }
 
-func NewServer() *Server {
-	s := &Server{
+func newServer() *server {
+	s := &server{
 		state:           "stop",
 		database:        make([]Attrs, 100),
 		index:           make(map[string]int, 100),
-		playlists:       make(map[string]*Playlist),
-		currentPlaylist: NewPlaylist(),
+		playlists:       make(map[string]*playlist),
+		currentPlaylist: newPlaylist(),
 		pos:             0,
 		idleEventc:      make(chan string),
-		idleStartc:      make(chan *IdleRequest),
+		idleStartc:      make(chan *idleRequest),
 		idleEndc:        make(chan uint),
 	}
 	for i := 0; i < len(s.database); i++ {
@@ -129,7 +129,7 @@ func NewServer() *Server {
 	return s
 }
 
-func (s *Server) writeResponse(p *textproto.Conn, args []string, okLine string) (cmdOk, closed bool) {
+func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) (cmdOk, closed bool) {
 	if len(args) < 1 {
 		p.PrintfLine("No command given")
 		return
@@ -193,7 +193,7 @@ func (s *Server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			return
 		}
 		if s.playlists[name] == nil {
-			s.playlists[name] = NewPlaylist()
+			s.playlists[name] = newPlaylist()
 		}
 		s.playlists[name].Add(i)
 	case "playlistdelete":
@@ -308,7 +308,7 @@ func (s *Server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			ack("playlist %s already exists", name)
 			return
 		}
-		s.playlists[name] = NewPlaylist()
+		s.playlists[name] = newPlaylist()
 		s.playlists[name].Append(s.currentPlaylist)
 	case "play", "stop":
 		s.idleEventc <- "player"
@@ -359,22 +359,22 @@ func (s *Server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 	return
 }
 
-type RequestType int
+type requestType int
 
 const (
-	Simple RequestType = iota
-	CommandListOk
-	Idle
-	NoIdle
+	simple requestType = iota
+	commandListOk
+	idle
+	noIdle
 )
 
-type Request struct {
-	typ     RequestType
+type request struct {
+	typ     requestType
 	args    []string
 	cmdList [][]string
 }
 
-func (s *Server) readRequest(p *textproto.Conn) (*Request, error) {
+func (s *server) readRequest(p *textproto.Conn) (*request, error) {
 	line, err := p.ReadLine()
 	if err == io.EOF {
 		return nil, err
@@ -385,7 +385,7 @@ func (s *Server) readRequest(p *textproto.Conn) (*Request, error) {
 	}
 	args := parseArgs(line)
 	if len(args) == 0 {
-		return &Request{typ: Simple, args: args}, nil
+		return &request{typ: simple, args: args}, nil
 	}
 	switch args[0] {
 	case "command_list_ok_begin":
@@ -405,28 +405,28 @@ func (s *Server) readRequest(p *textproto.Conn) (*Request, error) {
 			}
 			cmdList = append(cmdList, args)
 		}
-		return &Request{typ: CommandListOk, cmdList: cmdList}, nil
+		return &request{typ: commandListOk, cmdList: cmdList}, nil
 
 	case "idle":
-		return &Request{typ: Idle, args: args}, nil
+		return &request{typ: idle, args: args}, nil
 
 	case "noidle":
-		return &Request{typ: NoIdle, args: args}, nil
+		return &request{typ: noIdle, args: args}, nil
 	}
-	return &Request{typ: Simple, args: args}, nil
+	return &request{typ: simple, args: args}, nil
 }
 
-type IdleRequest struct {
+type idleRequest struct {
 	endTokenc  chan uint   // for token used to end event broadcast
 	eventc     chan string // for subsystem name
 	subsystems []string    // subsystems to listen for changes
 }
 
-func (s *Server) writeIdleResponse(p *textproto.Conn, id uint, quit chan bool, subsystems []string) {
+func (s *server) writeIdleResponse(p *textproto.Conn, id uint, quit chan bool, subsystems []string) {
 	p.StartResponse(id)
 	defer p.EndResponse(id)
 
-	req := &IdleRequest{
+	req := &idleRequest{
 		endTokenc:  make(chan uint),
 		eventc:     make(chan string, 1),
 		subsystems: subsystems,
@@ -444,7 +444,7 @@ func (s *Server) writeIdleResponse(p *textproto.Conn, id uint, quit chan bool, s
 	s.idleEndc <- token
 }
 
-func (s *Server) handleConnection(p *textproto.Conn) {
+func (s *server) handleConnection(p *textproto.Conn) {
 	id := p.Next()
 	p.StartRequest(id)
 	p.EndRequest(id)
@@ -469,7 +469,7 @@ func (s *Server) handleConnection(p *textproto.Conn) {
 		}
 		p.EndRequest(id)
 
-		if req.typ == Idle {
+		if req.typ == idle {
 			inIdle = true
 			go s.writeIdleResponse(p, id, endIdle, req.args[1:])
 			// writeIdleResponse does it's own StartResponse/EndResponse
@@ -481,8 +481,8 @@ func (s *Server) handleConnection(p *textproto.Conn) {
 			inIdle = false
 		}
 		switch req.typ {
-		case NoIdle:
-		case CommandListOk:
+		case noIdle:
+		case commandListOk:
 			var ok, closed bool
 			ok = true
 			for _, args := range req.cmdList {
@@ -497,7 +497,7 @@ func (s *Server) handleConnection(p *textproto.Conn) {
 			if ok {
 				p.PrintfLine("OK")
 			}
-		case Simple:
+		case simple:
 			if _, closed := s.writeResponse(p, req.args, "OK"); closed {
 				return
 			}
@@ -535,7 +535,7 @@ func deleteId(v []uint, id uint) []uint {
 	return v[:len(v)-1]
 }
 
-func (s *Server) broadcastIdleEvents() {
+func (s *server) broadcastIdleEvents() {
 	clientChans := make(map[uint]chan string)
 	subsys := make(map[string][]uint)
 	for _, name := range knownSubsystems {
@@ -584,7 +584,7 @@ func main() {
 		log.Fatalf("Listen failed: %v\n", err)
 		os.Exit(1)
 	}
-	s := NewServer()
+	s := newServer()
 	go s.broadcastIdleEvents()
 	for {
 		conn, err := ln.Accept()
