@@ -72,7 +72,7 @@ func TestPlaylistInfo(t *testing.T) {
 			t.Errorf("Client.PlaylistInfo(%d, -1) = %v, %s need _, nil", i, pls1, err)
 		}
 		if !attrsEqual(pls[i], pls1[0]) {
-			t.Errorf("Inconsistent song attribute for song %d", i)
+			t.Errorf("song at position %d is %v; want %v", i, pls[i], pls1[0])
 		}
 	}
 }
@@ -154,7 +154,7 @@ func TestPlaylistFunctions(t *testing.T) {
 		return
 	}
 	if i := attrsListIndex(attrs, "file", files[0]); i < 0 {
-		t.Errorf("Couldn't find song \"%s\" in %v", attrs)
+		t.Errorf("Couldn't find song %q in %v", files[0], attrs)
 		return
 	}
 	if err = cli.PlaylistDelete("Test Playlist", 0); err != nil {
@@ -167,7 +167,7 @@ func TestPlaylistFunctions(t *testing.T) {
 		return
 	}
 	if !attrsListEqual(playlist, attrs[1:]) {
-		t.Errorf("Unexpected playlist: %v != %v", playlist, attrs[1:])
+		t.Errorf("PlaylistContents returned %v; want %v", playlist, attrs[1:])
 		return
 	}
 	cli.PlaylistRemove("Test Playlist 2")

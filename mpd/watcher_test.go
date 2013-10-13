@@ -18,7 +18,7 @@ func localWatch(t *testing.T, names ...string) *Watcher {
 	return w
 }
 
-func loadTestFiles(t *testing.T, cli *Client, n int) {
+func loadTestFiles(t *testing.T, cli *Client, n int) (ok bool) {
 	if err := cli.Clear(); err != nil {
 		t.Errorf("Client.Clear failed: %s\n", err)
 		return
@@ -38,6 +38,7 @@ func loadTestFiles(t *testing.T, cli *Client, n int) {
 			return
 		}
 	}
+	return true
 }
 
 func TestWatcher(t *testing.T) {
@@ -46,7 +47,9 @@ func TestWatcher(t *testing.T) {
 
 	c := localDial(t)
 	defer teardown(c, t)
-	loadTestFiles(t, c, 10)
+	if !loadTestFiles(t, c, 10) {
+		return
+	}
 
 	// Give the watcher a chance.
 	<-time.After(time.Second)
@@ -80,7 +83,7 @@ func TestWatcher(t *testing.T) {
 		t.Errorf("Client.Stop failed: %s\n", err)
 		return
 	}
-	if err := c.Delete(5, 7); err != nil { // playlist change
+	if err := c.Delete(5, -1); err != nil { // playlist change
 		t.Errorf("Client.Delete failed: %s\n", err)
 		return
 	}
