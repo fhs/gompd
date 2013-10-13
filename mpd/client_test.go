@@ -9,7 +9,16 @@ import (
 	"testing"
 )
 
+var (
+	serverRunning  = false
+	useGoMPDServer = true
+)
+
 func localAddr() (net, addr string) {
+	if useGoMPDServer {
+		// Don't clash with standard MPD port 6600
+		return "tcp", "127.0.0.1:6603"
+	}
 	net = "unix"
 	addr = os.Getenv("MPD_HOST")
 	if len(addr) > 0 && addr[0] == '/' {
@@ -28,6 +37,12 @@ func localAddr() (net, addr string) {
 
 func localDial(t *testing.T) *Client {
 	net, addr := localAddr()
+	if useGoMPDServer && !serverRunning {
+		running := make(chan bool)
+		go serve(net, addr, running)
+		serverRunning = true
+		<-running
+	}
 	cli, err := Dial(net, addr)
 	if err != nil {
 		t.Fatalf("Dial(%q) = %v, %s want PTR, nil", addr, cli, err)

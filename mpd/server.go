@@ -2,7 +2,7 @@
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file
 
-package main
+package mpd
 
 import (
 	"fmt"
@@ -54,8 +54,6 @@ func parseArgs(line string) (args []string) {
 	}
 	return
 }
-
-type Attrs map[string]string
 
 type playlist struct {
 	songs []int
@@ -578,14 +576,15 @@ func (s *server) broadcastIdleEvents() {
 	}
 }
 
-func main() {
-	ln, err := net.Listen("tcp", ":6600")
+func serve(network, addr string, listening chan bool) {
+	ln, err := net.Listen(network, addr)
 	if err != nil {
 		log.Fatalf("Listen failed: %v\n", err)
 		os.Exit(1)
 	}
 	s := newServer()
 	go s.broadcastIdleEvents()
+	listening <- true
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
