@@ -394,7 +394,7 @@ func (c *Client) Shuffle(start, end int) error {
 
 // Database related commands
 
-// Retrieve the entire list of files
+// GetFiles returns the entire list of files in MPD database.
 func (c *Client) GetFiles() ([]string, error) {
 	id, err := c.text.Cmd("list file")
 	if err != nil {
@@ -410,7 +410,7 @@ func (c *Client) GetFiles() ([]string, error) {
 // empty string, everything is updated.
 //
 // The returned jobId identifies the update job, enqueued by MPD.
-func (c *Client) Update(uri string) (jobId int, err error) {
+func (c *Client) Update(uri string) (jobID int, err error) {
 	id, err := c.text.Cmd("update %s", quote(uri))
 	if err != nil {
 		return
@@ -425,11 +425,11 @@ func (c *Client) Update(uri string) (jobId int, err error) {
 	if !strings.HasPrefix(line, "updating_db: ") {
 		return 0, textproto.ProtocolError("unexpected response: " + line)
 	}
-	jobId, err = strconv.Atoi(line[13:])
+	jobID, err = strconv.Atoi(line[13:])
 	if err != nil {
 		return
 	}
-	return jobId, c.readOKLine("OK")
+	return jobID, c.readOKLine("OK")
 }
 
 // Stored playlists related commands

@@ -515,7 +515,7 @@ var knownSubsystems = []string{
 	"options",
 }
 
-func indexId(v []uint, id uint) int {
+func indexID(v []uint, id uint) int {
 	for i, n := range v {
 		if id == n {
 			return i
@@ -524,8 +524,8 @@ func indexId(v []uint, id uint) int {
 	return -1
 }
 
-func deleteId(v []uint, id uint) []uint {
-	i := indexId(v, id)
+func deleteID(v []uint, id uint) []uint {
+	i := indexID(v, id)
 	if i < 0 {
 		return v
 	}
@@ -560,7 +560,7 @@ func (s *server) broadcastIdleEvents() {
 		case client := <-s.idleEndc:
 			delete(clientChans, client)
 			for name := range subsys {
-				subsys[name] = deleteId(subsys[name], client)
+				subsys[name] = deleteID(subsys[name], client)
 			}
 
 		case name := <-s.idleEventc:
