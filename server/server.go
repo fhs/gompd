@@ -78,6 +78,9 @@ func (p *Playlist) Add(song int) {
 }
 
 func (p *Playlist) Delete(i int) {
+	if i < 0 || i >= len(p.songs) {
+		return
+	}
 	copy(p.songs[i:], p.songs[i+1:])
 	p.songs = p.songs[:len(p.songs)-1]
 }
@@ -100,6 +103,9 @@ type Server struct {
 	playlists       map[string]*Playlist
 	currentPlaylist *Playlist
 	pos             int // in currentPlaylist
+	idleEventc      chan string
+	idleStartc      chan *IdleRequest
+	idleEndc        chan uint
 }
 
 func NewServer() *Server {
@@ -110,6 +116,9 @@ func NewServer() *Server {
 		playlists:       make(map[string]*Playlist),
 		currentPlaylist: NewPlaylist(),
 		pos:             0,
+		idleEventc:      make(chan string),
+		idleStartc:      make(chan *IdleRequest),
+		idleEndc:        make(chan uint),
 	}
 	for i := 0; i < len(s.database); i++ {
 		s.database[i] = make(Attrs, 5)
@@ -120,7 +129,7 @@ func NewServer() *Server {
 	return s
 }
 
-func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string, okLine string) (cmdOk, closed bool) {
+func (s *Server) writeResponse(p *textproto.Conn, args []string, okLine string) (cmdOk, closed bool) {
 	if len(args) < 1 {
 		p.PrintfLine("No command given")
 		return
@@ -203,7 +212,7 @@ func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string, okLine
 			ack("playlist not found")
 			return
 		}
-		if pos >= pl.Len() {
+		if pos < 0 || pos >= pl.Len() {
 			ack("invalid song position")
 			return
 		}
@@ -272,6 +281,22 @@ func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string, okLine
 			return
 		}
 		s.currentPlaylist.Add(i)
+	case "delete":
+		if len(args) != 2 {
+			ack("wrong number of arguments")
+			return
+		}
+		i, err := strconv.Atoi(args[1])
+		if err != nil {
+			ack("invalid song position")
+			return
+		}
+		s.idleEventc <- "playlist"
+		if i < 0 || i >= s.currentPlaylist.Len() {
+			ack("invalid song position")
+			return
+		}
+		s.currentPlaylist.Delete(i)
 	case "save":
 		if len(args) != 2 {
 			ack("wrong number of arguments")
@@ -286,14 +311,17 @@ func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string, okLine
 		s.playlists[name] = NewPlaylist()
 		s.playlists[name].Append(s.currentPlaylist)
 	case "play", "stop":
+		s.idleEventc <- "player"
 		s.state = args[0]
 	case "next":
+		s.idleEventc <- "player"
 		if s.pos < 0 || s.pos >= s.currentPlaylist.Len() {
 			s.pos = 0
 			break
 		}
 		s.pos = (s.pos + 1) % s.currentPlaylist.Len()
 	case "previous":
+		s.idleEventc <- "player"
 		if s.pos < 0 || s.pos >= s.currentPlaylist.Len() {
 			s.pos = 0
 			break
@@ -334,8 +362,10 @@ func (s *Server) writeResponse(p *textproto.Conn, id uint, args []string, okLine
 type RequestType int
 
 const (
-	CommandListOk RequestType = iota
-	Simple
+	Simple RequestType = iota
+	CommandListOk
+	Idle
+	NoIdle
 )
 
 type Request struct {
@@ -354,7 +384,11 @@ func (s *Server) readRequest(p *textproto.Conn) (*Request, error) {
 		return nil, err
 	}
 	args := parseArgs(line)
-	if len(args) > 0 && args[0] == "command_list_ok_begin" {
+	if len(args) == 0 {
+		return &Request{typ: Simple, args: args}, nil
+	}
+	switch args[0] {
+	case "command_list_ok_begin":
 		cmdList := make([][]string, 0)
 		for {
 			line, err := p.ReadLine()
@@ -372,8 +406,42 @@ func (s *Server) readRequest(p *textproto.Conn) (*Request, error) {
 			cmdList = append(cmdList, args)
 		}
 		return &Request{typ: CommandListOk, cmdList: cmdList}, nil
+
+	case "idle":
+		return &Request{typ: Idle, args: args}, nil
+
+	case "noidle":
+		return &Request{typ: NoIdle, args: args}, nil
 	}
 	return &Request{typ: Simple, args: args}, nil
+}
+
+type IdleRequest struct {
+	endTokenc  chan uint   // for token used to end event broadcast
+	eventc     chan string // for subsystem name
+	subsystems []string    // subsystems to listen for changes
+}
+
+func (s *Server) writeIdleResponse(p *textproto.Conn, id uint, quit chan bool, subsystems []string) {
+	p.StartResponse(id)
+	defer p.EndResponse(id)
+
+	req := &IdleRequest{
+		endTokenc:  make(chan uint),
+		eventc:     make(chan string, 1),
+		subsystems: subsystems,
+	}
+	s.idleStartc <- req
+	token := <-req.endTokenc
+	select {
+	case name := <-req.eventc:
+		p.PrintfLine("changed: %s", name)
+		p.PrintfLine("OK")
+		<-quit
+	case <-quit:
+		p.PrintfLine("OK")
+	}
+	s.idleEndc <- token
 }
 
 func (s *Server) handleConnection(p *textproto.Conn) {
@@ -384,6 +452,8 @@ func (s *Server) handleConnection(p *textproto.Conn) {
 	p.PrintfLine("OK MPD gompd0.1")
 	p.EndResponse(id)
 
+	endIdle := make(chan bool)
+	inIdle := false
 	defer p.Close()
 	for {
 		id := p.Next()
@@ -392,15 +462,31 @@ func (s *Server) handleConnection(p *textproto.Conn) {
 		if err != nil {
 			return
 		}
+		// We need to do this inside request because idle response
+		// may not have ended yet, but it will end after the following.
+		if inIdle {
+			endIdle <- true
+		}
 		p.EndRequest(id)
 
+		if req.typ == Idle {
+			inIdle = true
+			go s.writeIdleResponse(p, id, endIdle, req.args[1:])
+			// writeIdleResponse does it's own StartResponse/EndResponse
+			continue
+		}
+
 		p.StartResponse(id)
+		if inIdle {
+			inIdle = false
+		}
 		switch req.typ {
+		case NoIdle:
 		case CommandListOk:
 			var ok, closed bool
 			ok = true
 			for _, args := range req.cmdList {
-				ok, closed = s.writeResponse(p, id, args, "list_OK")
+				ok, closed = s.writeResponse(p, args, "list_OK")
 				if closed {
 					return
 				}
@@ -412,11 +498,83 @@ func (s *Server) handleConnection(p *textproto.Conn) {
 				p.PrintfLine("OK")
 			}
 		case Simple:
-			if _, closed := s.writeResponse(p, id, req.args, "OK"); closed {
+			if _, closed := s.writeResponse(p, req.args, "OK"); closed {
 				return
 			}
 		}
 		p.EndResponse(id)
+	}
+}
+
+var knownSubsystems = []string{
+	"database",
+	"update",
+	"stored_playlist",
+	"playlist",
+	"player",
+	"mixer",
+	"output",
+	"options",
+}
+
+func indexId(v []uint, id uint) int {
+	for i, n := range v {
+		if id == n {
+			return i
+		}
+	}
+	return -1
+}
+
+func deleteId(v []uint, id uint) []uint {
+	i := indexId(v, id)
+	if i < 0 {
+		return v
+	}
+	copy(v[i:], v[i+1:])
+	return v[:len(v)-1]
+}
+
+func (s *Server) broadcastIdleEvents() {
+	clientChans := make(map[uint]chan string)
+	subsys := make(map[string][]uint)
+	for _, name := range knownSubsystems {
+		subsys[name] = make([]uint, 0)
+	}
+	token := uint(0)
+	for {
+		select {
+		case req := <-s.idleStartc:
+			clientChans[token] = req.eventc
+			names := req.subsystems
+			if len(req.subsystems) == 0 {
+				names = knownSubsystems
+			}
+			for _, name := range names {
+				if _, ok := subsys[name]; !ok {
+					subsys[name] = make([]uint, 0)
+				}
+				subsys[name] = append(subsys[name], token)
+			}
+			req.endTokenc <- token
+			token++
+
+		case client := <-s.idleEndc:
+			delete(clientChans, client)
+			for name := range subsys {
+				subsys[name] = deleteId(subsys[name], client)
+			}
+
+		case name := <-s.idleEventc:
+			if clients, ok := subsys[name]; ok {
+				for _, c := range clients {
+					select {
+					case clientChans[c] <- name:
+					default:
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -427,6 +585,7 @@ func main() {
 		os.Exit(1)
 	}
 	s := NewServer()
+	go s.broadcastIdleEvents()
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
