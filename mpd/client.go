@@ -8,10 +8,10 @@ package mpd
 
 import (
 	"errors"
+	"fmt"
 	"net/textproto"
 	"strconv"
 	"strings"
-	"fmt"
 )
 
 // Quote quotes strings in the format understood by MPD.
