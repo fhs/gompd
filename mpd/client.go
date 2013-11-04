@@ -81,11 +81,9 @@ func (c *Client) cmd(format string, args ...interface{}) (uint, error) {
 	return id, nil
 }
 
-var nl = []byte{'\n'}
-
 func (c *Client) printfLine(format string, args ...interface{}) error {
 	fmt.Fprintf(c.text.W, format, args...)
-	c.text.W.Write(nl)
+	c.text.W.WriteByte('\n')
 	return c.text.W.Flush()
 }
 
