@@ -8,6 +8,7 @@ package mpd
 
 import (
 	"errors"
+	"fmt"
 	"net/textproto"
 	"strconv"
 	"strings"
@@ -67,10 +68,29 @@ func DialAuthenticated(network, addr, password string) (c *Client, err error) {
 	return c, err
 }
 
+// We are reimplemeting Cmd() and PrintfLine() from textproto here, because
+// the original functions append CR-LF to the end of commands. This behavior
+// voilates the MPD protocol: Commands must be terminated by '\n'.
+func (c *Client) cmd(format string, args ...interface{}) (uint, error) {
+	id := c.text.Next()
+	c.text.StartRequest(id)
+	defer c.text.EndRequest(id)
+	if err := c.printfLine(format, args...); err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func (c *Client) printfLine(format string, args ...interface{}) error {
+	fmt.Fprintf(c.text.W, format, args...)
+	c.text.W.WriteByte('\n')
+	return c.text.W.Flush()
+}
+
 // Close terminates the connection with MPD.
 func (c *Client) Close() (err error) {
 	if c.text != nil {
-		c.text.PrintfLine("close")
+		c.printfLine("close")
 		err = c.text.Close()
 		c.text = nil
 	}
@@ -149,7 +169,7 @@ func (c *Client) readAttrs(terminator string) (attrs Attrs, err error) {
 
 // CurrentSong returns information about the current song in the playlist.
 func (c *Client) CurrentSong() (Attrs, error) {
-	id, err := c.text.Cmd("currentsong")
+	id, err := c.cmd("currentsong")
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +180,7 @@ func (c *Client) CurrentSong() (Attrs, error) {
 
 // Status returns information about the current status of MPD.
 func (c *Client) Status() (Attrs, error) {
-	id, err := c.text.Cmd("status")
+	id, err := c.cmd("status")
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +201,7 @@ func (c *Client) readOKLine(terminator string) (err error) {
 }
 
 func (c *Client) okCmd(format string, args ...interface{}) error {
-	id, err := c.text.Cmd(format, args...)
+	id, err := c.cmd(format, args...)
 	if err != nil {
 		return err
 	}
@@ -191,7 +211,7 @@ func (c *Client) okCmd(format string, args ...interface{}) error {
 }
 
 func (c *Client) idle(subsystems ...string) ([]string, error) {
-	id, err := c.text.Cmd("idle %s", strings.Join(subsystems, " "))
+	id, err := c.cmd("idle %s", strings.Join(subsystems, " "))
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +221,7 @@ func (c *Client) idle(subsystems ...string) ([]string, error) {
 }
 
 func (c *Client) noIdle() (err error) {
-	id, err := c.text.Cmd("noidle")
+	id, err := c.cmd("noidle")
 	if err == nil {
 		c.text.StartResponse(id)
 		c.text.EndResponse(id)
@@ -300,7 +320,7 @@ func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err error) {
 		return nil, errors.New("negative start index")
 	}
 	if start >= 0 && end < 0 {
-		id, err := c.text.Cmd("playlistinfo %d", start)
+		id, err := c.cmd("playlistinfo %d", start)
 		if err != nil {
 			return nil, err
 		}
@@ -308,7 +328,7 @@ func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err error) {
 		defer c.text.EndResponse(id)
 		return c.readAttrsList("file")
 	}
-	id, err := c.text.Cmd("playlistinfo")
+	id, err := c.cmd("playlistinfo")
 	if err != nil {
 		return nil, err
 	}
@@ -356,9 +376,9 @@ func (c *Client) AddId(uri string, pos int) (int, error) {
 	var id uint
 	var err error
 	if pos >= 0 {
-		id, err = c.text.Cmd("addid %s %d", quote(uri), pos)
+		id, err = c.cmd("addid %s %d", quote(uri), pos)
 	}
-	id, err = c.text.Cmd("addid %s", quote(uri))
+	id, err = c.cmd("addid %s", quote(uri))
 	if err != nil {
 		return -1, err
 	}
@@ -396,7 +416,7 @@ func (c *Client) Shuffle(start, end int) error {
 
 // GetFiles returns the entire list of files in MPD database.
 func (c *Client) GetFiles() ([]string, error) {
-	id, err := c.text.Cmd("list file")
+	id, err := c.cmd("list file")
 	if err != nil {
 		return nil, err
 	}
@@ -411,7 +431,7 @@ func (c *Client) GetFiles() ([]string, error) {
 //
 // The returned jobId identifies the update job, enqueued by MPD.
 func (c *Client) Update(uri string) (jobID int, err error) {
-	id, err := c.text.Cmd("update %s", quote(uri))
+	id, err := c.cmd("update %s", quote(uri))
 	if err != nil {
 		return
 	}
@@ -436,7 +456,7 @@ func (c *Client) Update(uri string) (jobID int, err error) {
 
 // ListPlaylists lists all stored playlists.
 func (c *Client) ListPlaylists() ([]Attrs, error) {
-	id, err := c.text.Cmd("listplaylists")
+	id, err := c.cmd("listplaylists")
 	if err != nil {
 		return nil, err
 	}
@@ -448,7 +468,7 @@ func (c *Client) ListPlaylists() ([]Attrs, error) {
 // PlaylistContents returns a list of attributes for songs in the specified
 // stored playlist.
 func (c *Client) PlaylistContents(name string) ([]Attrs, error) {
-	id, err := c.text.Cmd("listplaylistinfo %s", quote(name))
+	id, err := c.cmd("listplaylistinfo %s", quote(name))
 	if err != nil {
 		return nil, err
 	}
