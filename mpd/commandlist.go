@@ -296,7 +296,7 @@ func (cl *CommandList) PlaylistSave(name string) {
 func (cl *CommandList) End() error {
 
 	// Tell MPD to start an OK command list:
-	beginID, beginErr := cl.client.text.Cmd("command_list_ok_begin")
+	beginID, beginErr := cl.client.cmd("command_list_ok_begin")
 	if beginErr != nil {
 		return beginErr
 	}
@@ -308,7 +308,7 @@ func (cl *CommandList) End() error {
 
 	// Issue all of the queued up commands in the list:
 	for e := cl.cmdQ.Front(); e != nil; e = e.Next() {
-		cmdID, cmdErr := cl.client.text.Cmd(e.Value.(*command).cmd)
+		cmdID, cmdErr := cl.client.cmd(e.Value.(*command).cmd)
 		if cmdErr != nil {
 			return cmdErr
 		}
@@ -317,7 +317,7 @@ func (cl *CommandList) End() error {
 	}
 
 	// Tell MPD to end the command list and do the operations.
-	endID, endErr := cl.client.text.Cmd("command_list_end")
+	endID, endErr := cl.client.cmd("command_list_end")
 	if endErr != nil {
 		return endErr
 	}
