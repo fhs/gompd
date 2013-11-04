@@ -68,11 +68,17 @@ func DialAuthenticated(network, addr, password string) (c *Client, err error) {
 	return c, err
 }
 
+// We are reimplemeting Cmd() and PrintfLine() from textproto here, because
+// the original functions append CR-LF to the end of commands. This behavior
+// voilates the MPD protocol: Commands must be terminated by '\n'.
 func (c *Client) cmd(format string, args ...interface{}) (uint, error) {
 	id := c.text.Next()
 	c.text.StartRequest(id)
 	defer c.text.EndRequest(id)
-	return id, c.printfLine(format, args...)
+	if err := c.printfLine(format, args...); err != nil {
+		return 0, err
+	}
+	return id, nil
 }
 
 var nl = []byte{'\n'}
