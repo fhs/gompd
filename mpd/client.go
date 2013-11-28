@@ -364,6 +364,11 @@ func (c *Client) MoveId(songid, position int) error {
 	return c.okCmd("moveid %d %d", songid, position)
 }
 
+// Move moves the song in position from	to the position to.
+func (c *Client) Move(from, to int) error {
+	return c.okCmd("move %d %d", from, to)
+}
+
 // Add adds the file/directory uri to playlist. Directories add recursively.
 func (c *Client) Add(uri string) error {
 	return c.okCmd("add %s", quote(uri))
