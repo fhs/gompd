@@ -369,7 +369,7 @@ func (c *Client) MoveId(songid, position int) error {
 // it moves only the song at position start.
 func (c *Client) Move(start, end, to int) error {
 	if end == -1 {
-		return cmd.okCmd("move %d %d", start, to)
+		return c.okCmd("move %d %d", start, to)
 	}
 	return c.okCmd("move %d:%d %d", start, end, to)
 }
@@ -460,6 +460,17 @@ func (c *Client) Update(uri string) (jobID int, err error) {
 		return
 	}
 	return jobID, c.readOKLine("OK")
+}
+
+func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
+	id, err := c.cmd("listallinfo %s", uri)
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	return c.readAttrsList("file")
 }
 
 // Stored playlists related commands
