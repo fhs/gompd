@@ -466,7 +466,7 @@ func (c *Client) Update(uri string) (jobID int, err error) {
 // any song that is either inside or matches the passed in uri is returned.
 // To get information about every song in the library, pass in "/". 
 func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
-	id, err := c.cmd("listallinfo %s", uri)
+	id, err := c.cmd("listallinfo \"%s\"", uri)
 	if err != nil {
 		return nil, err
 	}
