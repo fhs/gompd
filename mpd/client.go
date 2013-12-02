@@ -364,6 +364,16 @@ func (c *Client) MoveId(songid, position int) error {
 	return c.okCmd("moveid %d %d", songid, position)
 }
 
+// Move moves songs in the playlist. If both start and end are positive,
+// it moves those at positions in range [start, end). If end is negative,
+// it moves only the song at position start.
+func (c *Client) Move(start, end, to int) error {
+	if end == -1 {
+		return c.okCmd("move %d %d", start, to)
+	}
+	return c.okCmd("move %d:%d %d", start, end, to)
+}
+
 // Add adds the file/directory uri to playlist. Directories add recursively.
 func (c *Client) Add(uri string) error {
 	return c.okCmd("add %s", quote(uri))
@@ -450,6 +460,44 @@ func (c *Client) Update(uri string) (jobID int, err error) {
 		return
 	}
 	return jobID, c.readOKLine("OK")
+}
+
+// ListAllInfo returns attributes for songs in the library. Information about
+// any song that is either inside or matches the passed in uri is returned.
+// To get information about every song in the library, pass in "/". 
+func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
+	id, err := c.cmd("listallinfo \"%s\" ", uri)
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	attrs := []Attrs{}
+	for {
+		line, err := c.text.ReadLine()
+		if err != nil {
+			return nil, err
+		}
+		if line == "OK" {
+			break
+		}
+		if strings.HasPrefix(line, "file: ") { // new entry begins
+			attrs = append(attrs, Attrs{})
+		}
+		if len(attrs) == 0 {
+			if strings.HasPrefix(line, "directory: ") {
+				continue
+			}
+			return nil, textproto.ProtocolError("unexpected: " + line)
+		}
+		i := strings.Index(line, ": ")
+		if i < 0 {
+			return nil, textproto.ProtocolError("can't parse line: " + line)
+		}
+		attrs[len(attrs)-1][line[0:i]] = line[i+2:]
+	}
+	return attrs, nil
 }
 
 // Stored playlists related commands
