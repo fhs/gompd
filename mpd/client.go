@@ -473,7 +473,33 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
 
-	return c.readAttrsList("file")
+	//return c.readAttrsList("file")
+
+	attrs = []Attrs{}
+	for {
+		line, err := c.text.ReadLine()
+		if err != nil {
+			return nil, err
+		}
+		if line == "OK" {
+			break
+		}
+		if strings.HasPrefix(line, "file: ") { // new entry begins
+			attrs = append(attrs, Attrs{})
+		}
+		if len(attrs) == 0 {
+			if strings.HasPrefix(line, "directory: ") {
+				continue
+			}
+			return nil, textproto.ProtocolError("unexpected: " + line)
+		}
+		i := strings.Index(line, ": ")
+		if i < 0 {
+			return nil, textproto.ProtocolError("can't parse line: " + line)
+		}
+		attrs[len(attrs)-1][line[0:i]] = line[i+2:]
+	}
+	return attrs, nil
 }
 
 // Stored playlists related commands
