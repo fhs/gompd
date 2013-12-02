@@ -473,9 +473,7 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
 
-	//return c.readAttrsList("file")
-
-	attrs = []Attrs{}
+	attrs := []Attrs{}
 	for {
 		line, err := c.text.ReadLine()
 		if err != nil {
