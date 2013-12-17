@@ -500,7 +500,7 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 	return attrs, nil
 }
 
-//List searches the database for your query. You can use something simple like
+// List searches the database for your query. You can use something simple like
 // `artist` for your search, or something like `artist album <Album Name>` if
 // you want the artist that has an album with a specified album name.
 func (c *Client) List(uri string) ([]string, error) {
