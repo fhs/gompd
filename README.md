@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/fhs/gompd.png)](https://travis-ci.org/fhs/gompd)
+[![Build Status](https://travis-ci.org/turbowookie/gompd.png)](https://travis-ci.org/turbowookie/gompd)
 
 ## Overview
 
