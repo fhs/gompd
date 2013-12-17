@@ -481,15 +481,18 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 		}
 		if line == "OK" {
 			break
-		}
-		if strings.HasPrefix(line, "file: ") { // new entry begins
+		} else if strings.HasPrefix(line, "file: ") { // new entry begins
 			attrs = append(attrs, Attrs{})
+		} else if strings.HasPrefix(line, "directory: ") || strings.HasPrefix(line, "Last-Modified") {
+			continue
 		}
+
 		if len(attrs) == 0 {
-			if strings.HasPrefix(line, "directory: ") {
+			if strings.HasPrefix(line, "directory: ") || strings.HasPrefix(line, "Last-Modified") {
 				continue
 			}
-			return nil, textproto.ProtocolError("unexpected: " + line)
+
+			return nil, textproto.ProtocolError("unexpected: `" + line + "`")
 		}
 		i := strings.Index(line, ": ")
 		if i < 0 {
