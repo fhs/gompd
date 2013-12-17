@@ -111,6 +111,16 @@ func TestCurrentSong(t *testing.T) {
 	}
 }
 
+func TestStatus(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	attrs, err := cli.Status()
+	if err != nil {
+		t.Errorf("Client.Status() = %v, %s need _, nil", attrs, err)
+	}
+}
+
 func TestPing(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
