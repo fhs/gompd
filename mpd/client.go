@@ -9,7 +9,6 @@ package mpd
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/textproto"
 	"strconv"
 	"strings"
@@ -505,7 +504,6 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 // being to an artist and belong to the album by searching:
 // `find artist "<Artist>" album "<Album>"
 func (c *Client) Find(uri string) ([]Attrs, error) {
-	log.Println("find " + uri)
 	id, err := c.cmd("find " + uri)
 	if err != nil {
 		return nil, err
