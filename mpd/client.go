@@ -376,16 +376,6 @@ func (c *Client) MoveId(songid, position int) error {
 	return c.okCmd("moveid %d %d", songid, position)
 }
 
-// Move moves songs in the playlist. If both start and end are positive,
-// it moves those at positions in range [start, end). If end is negative,
-// it moves only the song at position start.
-func (c *Client) Move(start, end, to int) error {
-	if end == -1 {
-		return c.okCmd("move %d %d", start, to)
-	}
-	return c.okCmd("move %d:%d %d", start, end, to)
-}
-
 // Add adds the file/directory uri to playlist. Directories add recursively.
 func (c *Client) Add(uri string) error {
 	return c.okCmd("add %s", quote(uri))
