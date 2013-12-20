@@ -476,6 +476,7 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 	defer c.text.EndResponse(id)
 
 	attrs := []Attrs{}
+	inEntry := false
 	for {
 		line, err := c.text.ReadLine()
 		if err != nil {
@@ -485,22 +486,18 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 			break
 		} else if strings.HasPrefix(line, "file: ") { // new entry begins
 			attrs = append(attrs, Attrs{})
-		} else if strings.HasPrefix(line, "directory: ") || strings.HasPrefix(line, "Last-Modified") {
-			continue
+			inEntry = true;
+		} else if strings.HasPrefix(line, "directory: ") {
+			inEntry = false
 		}
 
-		if len(attrs) == 0 {
-			if strings.HasPrefix(line, "directory: ") || strings.HasPrefix(line, "Last-Modified") {
-				continue
+		if inEntry {
+			i := strings.Index(line, ": ")
+			if i < 0 {
+				return nil, textproto.ProtocolError("can't parse line: " + line)
 			}
-
-			return nil, textproto.ProtocolError("unexpected: `" + line + "`")
+			attrs[len(attrs)-1][line[0:i]] = line[i+2:]			
 		}
-		i := strings.Index(line, ": ")
-		if i < 0 {
-			return nil, textproto.ProtocolError("can't parse line: " + line)
-		}
-		attrs[len(attrs)-1][line[0:i]] = line[i+2:]
 	}
 	return attrs, nil
 }
