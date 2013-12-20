@@ -464,6 +464,88 @@ func (c *Client) Update(uri string) (jobID int, err error) {
 	return jobID, c.readOKLine("OK")
 }
 
+// ListAllInfo returns attributes for songs in the library. Information about
+// any song that is either inside or matches the passed in uri is returned.
+// To get information about every song in the library, pass in "/".
+func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
+	id, err := c.cmd("listallinfo %s ", quote(uri))
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	attrs := []Attrs{}
+	inEntry := false
+	for {
+		line, err := c.text.ReadLine()
+		if err != nil {
+			return nil, err
+		}
+		if line == "OK" {
+			break
+		} else if strings.HasPrefix(line, "file: ") { // new entry begins
+			attrs = append(attrs, Attrs{})
+			inEntry = true
+		} else if strings.HasPrefix(line, "directory: ") {
+			inEntry = false
+		}
+
+		if inEntry {
+			i := strings.Index(line, ": ")
+			if i < 0 {
+				return nil, textproto.ProtocolError("can't parse line: " + line)
+			}
+			attrs[len(attrs)-1][line[0:i]] = line[i+2:]
+		}
+	}
+	return attrs, nil
+}
+
+// Find returns attributes for songs in the library. You can find songs that
+// belong to an artist and belong to the album by searching:
+// `find artist "<Artist>" album "<Album>"`
+func (c *Client) Find(uri string) ([]Attrs, error) {
+	id, err := c.cmd("find " + quote(uri))
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	return c.readAttrsList("file")
+}
+
+// List searches the database for your query. You can use something simple like
+// `artist` for your search, or something like `artist album <Album Name>` if
+// you want the artist that has an album with a specified album name.
+func (c *Client) List(uri string) ([]string, error) {
+	id, err := c.cmd("list " + quote(uri))
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	ret := make([]string, 0)
+	for {
+		line, err := c.text.ReadLine()
+		if err != nil {
+			return nil, err
+		}
+
+		i := strings.Index(line, ": ")
+		if i > 0 {
+			ret = append(ret, line[i+2:])
+		} else if line == "OK" {
+			break
+		} else {
+			return nil, textproto.ProtocolError("can't parse line: " + line)
+		}
+	}
+	return ret, nil
+}
+
 // Stored playlists related commands
 
 // ListPlaylists lists all stored playlists.
