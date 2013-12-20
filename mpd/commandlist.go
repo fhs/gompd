@@ -195,6 +195,20 @@ func (cl *CommandList) DeleteId(id int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("deleteid %d", id), nil, cmdNoReturn})
 }
 
+// Move moves the songs between the positions start and end to the new position
+// position. If end is negative, only the song at position start is moved.
+func (cl *CommandList) Move(start, end, position int) error {
+	if start < 0 {
+		return errors.New("negative start index")
+	}
+	if end < 0 {
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("move %d %d", start, position), nil, cmdNoReturn})
+	} else {
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("move %d:%d %d", start, end, position), nil, cmdNoReturn})
+	}
+	return nil
+}
+
 // MoveId moves songid to position on the playlist.
 func (cl *CommandList) MoveId(songid, position int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("moveid %d %d", songid, position), nil, cmdNoReturn})

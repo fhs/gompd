@@ -359,6 +359,18 @@ func (c *Client) DeleteId(id int) error {
 	return c.okCmd("deleteid %d", id)
 }
 
+// Move moves the songs between the positions start and end to the new position
+// position. If end is negative, only the song at position start is moved.
+func (c *Client) Move(start, end, position int) error {
+	if start < 0 {
+		return errors.New("negative start index")
+	}
+	if end < 0 {
+		return c.okCmd("move %d %d", start, position)
+	}
+	return c.okCmd("move %d:%d %d", start, end, position)
+}
+
 // MoveId moves songid to position on the plyalist.
 func (c *Client) MoveId(songid, position int) error {
 	return c.okCmd("moveid %d %d", songid, position)
