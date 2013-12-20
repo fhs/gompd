@@ -468,7 +468,7 @@ func (c *Client) Update(uri string) (jobID int, err error) {
 // any song that is either inside or matches the passed in uri is returned.
 // To get information about every song in the library, pass in "/".
 func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
-	id, err := c.cmd("listallinfo \"%s\" ", uri)
+	id, err := c.cmd("listallinfo %s ", quote(uri))
 	if err != nil {
 		return nil, err
 	}
@@ -506,10 +506,10 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 }
 
 // Find returns attributes for songs in the library. You can find songs that
-// being to an artist and belong to the album by searching:
+// belong to an artist and belong to the album by searching:
 // `find artist "<Artist>" album "<Album>"
 func (c *Client) Find(uri string) ([]Attrs, error) {
-	id, err := c.cmd("find " + uri)
+	id, err := c.cmd("find " + quote(uri))
 	if err != nil {
 		return nil, err
 	}
@@ -547,7 +547,7 @@ func (c *Client) Find(uri string) ([]Attrs, error) {
 // `artist` for your search, or something like `artist album <Album Name>` if
 // you want the artist that has an album with a specified album name.
 func (c *Client) List(uri string) ([]string, error) {
-	id, err := c.cmd("list " + uri)
+	id, err := c.cmd("list " + quote(uri))
 	if err != nil {
 		return nil, err
 	}
