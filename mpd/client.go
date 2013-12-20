@@ -486,7 +486,7 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 			break
 		} else if strings.HasPrefix(line, "file: ") { // new entry begins
 			attrs = append(attrs, Attrs{})
-			inEntry = true;
+			inEntry = true
 		} else if strings.HasPrefix(line, "directory: ") {
 			inEntry = false
 		}
@@ -496,7 +496,7 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 			if i < 0 {
 				return nil, textproto.ProtocolError("can't parse line: " + line)
 			}
-			attrs[len(attrs)-1][line[0:i]] = line[i+2:]			
+			attrs[len(attrs)-1][line[0:i]] = line[i+2:]
 		}
 	}
 	return attrs, nil
@@ -504,7 +504,7 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 
 // Find returns attributes for songs in the library. You can find songs that
 // belong to an artist and belong to the album by searching:
-// `find artist "<Artist>" album "<Album>"
+// `find artist "<Artist>" album "<Album>"`
 func (c *Client) Find(uri string) ([]Attrs, error) {
 	id, err := c.cmd("find " + quote(uri))
 	if err != nil {
@@ -524,12 +524,6 @@ func (c *Client) Find(uri string) ([]Attrs, error) {
 		}
 		if strings.HasPrefix(line, "file: ") { // new entry begins
 			attrs = append(attrs, Attrs{})
-		}
-		if len(attrs) == 0 {
-			if strings.HasPrefix(line, "directory: ") {
-				continue
-			}
-			return nil, textproto.ProtocolError("unexpected: " + line)
 		}
 		i := strings.Index(line, ": ")
 		if i < 0 {
