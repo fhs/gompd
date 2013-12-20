@@ -545,23 +545,7 @@ func (c *Client) List(uri string) ([]string, error) {
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
 
-	ret := make([]string, 0)
-	for {
-		line, err := c.text.ReadLine()
-		if err != nil {
-			return nil, err
-		}
-
-		i := strings.Index(line, ": ")
-		if i > 0 {
-			ret = append(ret, line[i+2:])
-		} else if line == "OK" {
-			break
-		} else {
-			return nil, textproto.ProtocolError("can't parse line: " + line)
-		}
-	}
-	return ret, nil
+	return readAttrsList("file")
 }
 
 // Stored playlists related commands
