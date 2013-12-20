@@ -513,25 +513,7 @@ func (c *Client) Find(uri string) ([]Attrs, error) {
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
 
-	attrs := []Attrs{}
-	for {
-		line, err := c.text.ReadLine()
-		if err != nil {
-			return nil, err
-		}
-		if line == "OK" {
-			break
-		}
-		if strings.HasPrefix(line, "file: ") { // new entry begins
-			attrs = append(attrs, Attrs{})
-		}
-		i := strings.Index(line, ": ")
-		if i < 0 {
-			return nil, textproto.ProtocolError("can't parse line: " + line)
-		}
-		attrs[len(attrs)-1][line[0:i]] = line[i+2:]
-	}
-	return attrs, nil
+	return c.readAttrsList("file")
 }
 
 // List searches the database for your query. You can use something simple like
@@ -545,7 +527,23 @@ func (c *Client) List(uri string) ([]string, error) {
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
 
-	return readAttrsList("file")
+	ret := make([]string, 0)
+	for {
+		line, err := c.text.ReadLine()
+		if err != nil {
+			return nil, err
+		}
+
+		i := strings.Index(line, ": ")
+		if i > 0 {
+			ret = append(ret, line[i+2:])
+		} else if line == "OK" {
+			break
+		} else {
+			return nil, textproto.ProtocolError("can't parse line: " + line)
+		}
+	}
+	return ret, nil
 }
 
 // Stored playlists related commands
