@@ -617,3 +617,34 @@ func (c *Client) PlaylistRemove(name string) error {
 func (c *Client) PlaylistSave(name string) error {
 	return c.okCmd("save %s", quote(name))
 }
+
+// StickerSet applies a sticker to a song
+func (c *Client) StickerSet(song string, stickerName string, value string) error {
+	return c.okCmd("sticker set song %s %s %s", quote(song), quote(stickerName), quote(value))
+}
+
+// StickerGet fetches a sticker value for a song
+func (c *Client) StickerGet(song string, stickerName string) (string, error) {
+	id, err := c.cmd("sticker get song %s %s", quote(song), quote(stickerName))
+	if err != nil {
+		return "", err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	list, err := c.readList("sticker")
+	if err != nil {
+		return "", err
+	}
+	if len(list) == 0 {
+		return "", errors.New("No stickers in response")
+	}
+	if len(list) > 1 {
+		return "", errors.New("Multiple stickers in response: " + fmt.Sprintf("%+v", list))
+	}
+	parts := strings.Split(list[0], "=")
+	if parts[0] == stickerName {
+		return parts[1], nil
+	}
+	return "", errors.New("Incorrect sticker response format: " + list[0])
+}

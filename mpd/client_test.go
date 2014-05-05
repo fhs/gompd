@@ -7,6 +7,7 @@ package mpd
 import (
 	"os"
 	"testing"
+	"time"
 )
 
 var (
@@ -293,6 +294,45 @@ func TestQuote(t *testing.T) {
 	for _, test := range quoteTests {
 		if q := quote(test.s); q != test.q {
 			t.Errorf("quote(%s) returned %s; expected %s\n", test.s, q, test.q)
+		}
+	}
+}
+
+func TestStickers(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	files, err := cli.GetFiles()
+	if err != nil {
+		t.Errorf("Client.GetFiles failed: %s\n", err)
+		return
+	}
+	fileName := files[0]
+	for _, sticker := range []struct {
+		name  string
+		value string
+	}{
+		{"mpd client sticker test 1", "mpd client sticker value 1"},
+		{"mpd client sticker test 2", "mpd client sticker value 2"},
+	} {
+		err = cli.StickerSet(fileName, sticker.name, sticker.value)
+		if err != nil {
+			t.Errorf("Client.StickerSet failed: '%s'\n", err)
+			return
+		}
+		time.Sleep(time.Second)
+		actualValue, err := cli.StickerGet(fileName, sticker.name)
+		if err != nil {
+			t.Errorf("Client.StickerGet failed: '%s'\n", err)
+			return
+		}
+		if actualValue != sticker.value {
+			t.Errorf(
+				"Expected sticker value returned as '%s' for '%s' but was '%s'",
+				sticker.value,
+				fileName,
+				actualValue,
+			)
 		}
 	}
 }
