@@ -189,6 +189,18 @@ func (c *Client) Status() (Attrs, error) {
 	return c.readAttrs("OK")
 }
 
+// Stats returns information database.
+func (c *Client) Stats() (Attrs, error) {
+	id, err := c.cmd("stats")
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	return c.readAttrs("OK")
+}
+
+
 func (c *Client) readOKLine(terminator string) (err error) {
 	line, err := c.text.ReadLine()
 	if err != nil {
