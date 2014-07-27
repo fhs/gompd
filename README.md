@@ -5,6 +5,8 @@
 This is a Go package for accessing Music Player Daemon (MPD)
 (http://mpd.wikia.com/wiki/Music_Player_Daemon_Wiki)
 
+Old repository: https://code.google.com/p/gompd/
+
 ## Installation
 
 How to install:
