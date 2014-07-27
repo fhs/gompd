@@ -189,7 +189,7 @@ func (c *Client) Status() (Attrs, error) {
 	return c.readAttrs("OK")
 }
 
-// Stats returns information database.
+// Stats displays statistics (number of artists, songs, playtime, etc)
 func (c *Client) Stats() (Attrs, error) {
 	id, err := c.cmd("stats")
 	if err != nil {
