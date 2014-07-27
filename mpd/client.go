@@ -200,7 +200,6 @@ func (c *Client) Stats() (Attrs, error) {
 	return c.readAttrs("OK")
 }
 
-
 func (c *Client) readOKLine(terminator string) (err error) {
 	line, err := c.text.ReadLine()
 	if err != nil {
