@@ -280,6 +280,23 @@ func (c *Client) Previous() error {
 	return c.okCmd("previous")
 }
 
+// CDPrevious behaves like previous track button on a CD player or iOS device, where it skips to
+// the beginning of the song unless you are within 3 seconds of the beginning already, then it
+// goes to the previous track
+func (c *Client) CDPrevious() error {
+	status, _ := c.Status()
+	fmt.Println("%v", status)
+
+	elapsedTime, _ := strconv.ParseFloat(status["elapsed"], 32)
+	fmt.Println(elapsedTime)
+	if elapsedTime <= 3 {
+		return c.Previous()
+	} else {
+		songId, _ := strconv.Atoi(status["songid"])
+		return c.SeekId(songId, 0)
+	}
+}
+
 // Seek seeks to the position time (in seconds) of the song at playlist position pos.
 func (c *Client) Seek(pos, time int) error {
 	return c.okCmd("seek %d %d", pos, time)
