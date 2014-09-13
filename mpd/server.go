@@ -149,6 +149,21 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 				p.PrintfLine("file: %s", a["file"])
 			}
 		}
+	case "lsinfo":
+		for _, a := range s.database {
+			p.PrintfLine("file: %s", a["file"])
+			p.PrintfLine("Last-Modified: 2014-07-02T12:32:26Z")
+			p.PrintfLine("Artist: Newcleus")
+			p.PrintfLine("Title: Jam On It")
+			p.PrintfLine("Track: 02")
+		}
+		for _, a := range []string{
+			"music/Buck 65 - Dirtbike 1",
+			"music/Howlin' Wolf - Moanin' in the Moonlight",
+		} {
+			p.PrintfLine("directory: %s", a)
+		}
+		p.PrintfLine("playlist: BBC 6 Music.m3u")
 	case "listplaylists":
 		for k := range s.playlists {
 			p.PrintfLine("playlist: %s", k)
