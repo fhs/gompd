@@ -92,6 +92,46 @@ func TestPlaylistInfo(t *testing.T) {
 	}
 }
 
+func TestListInfo(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	fileCount, dirCount, plsCount := 0, 0, 0
+
+	ls, err := cli.ListInfo("")
+	if err != nil {
+		// We can't use t.Fatalf because defer'ed calls won't run
+		t.Errorf(`Client.ListInfo("") = %v, %s need _, nil`, ls, err)
+		return
+	}
+	for i, item := range ls {
+		if _, ok := item["file"]; ok {
+			fileCount++
+			for _, field := range []string{"last-modified", "artist", "title", "track"} {
+				if _, ok := item[field]; !ok {
+					t.Errorf(`ListInfo: file item %d has no "%s" field`, i, field)
+				}
+			}
+		} else if _, ok := item["directory"]; ok {
+			dirCount++
+		} else if _, ok := item["playlist"]; ok {
+			plsCount++
+		} else {
+			t.Errorf("ListInfo: item %d has no file/directory/playlist attribute", i)
+		}
+	}
+
+	if expected := 100; fileCount != expected {
+		t.Errorf(`ListInfo: expected %d files, got %d`, expected, fileCount)
+	}
+	if expected := 2; dirCount != expected {
+		t.Errorf(`ListInfo: expected %d directories, got %d`, expected, dirCount)
+	}
+	if expected := 1; plsCount != expected {
+		t.Errorf(`ListInfo: expected %d playlists, got %d`, expected, plsCount)
+	}
+}
+
 func TestCurrentSong(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)

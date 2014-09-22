@@ -513,6 +513,37 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 	return attrs, nil
 }
 
+// ListInfo lists the contents of the directory URI using MPD's lsinfo command.
+func (c *Client) ListInfo(uri string) ([]Attrs, error) {
+	id, err := c.cmd("lsinfo %s", quote(uri))
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	attrs := []Attrs{}
+	for {
+		line, err := c.text.ReadLine()
+		if err != nil {
+			return nil, err
+		}
+		if line == "OK" {
+			break
+		}
+		if strings.HasPrefix(line, "file: ") ||
+			strings.HasPrefix(line, "directory: ") ||
+			strings.HasPrefix(line, "playlist: ") {
+			attrs = append(attrs, Attrs{})
+		}
+		i := strings.Index(line, ": ")
+		if i < 0 {
+			return nil, textproto.ProtocolError("can't parse line: " + line)
+		}
+		attrs[len(attrs)-1][strings.ToLower(line[0:i])] = line[i+2:]
+	}
+	return attrs, nil
+}
+
 // Find returns attributes for songs in the library. You can find songs that
 // belong to an artist and belong to the album by searching:
 // `find artist "<Artist>" album "<Album>"`
