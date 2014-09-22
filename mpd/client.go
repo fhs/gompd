@@ -513,8 +513,8 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 	return attrs, nil
 }
 
-// LsInfo lists the contents of the directory URI.
-func (c *Client) LsInfo(uri string) ([]Attrs, error) {
+// ListInfo lists the contents of the directory URI using MPD's lsinfo command.
+func (c *Client) ListInfo(uri string) ([]Attrs, error) {
 	id, err := c.cmd("lsinfo %s", quote(uri))
 	if err != nil {
 		return nil, err
