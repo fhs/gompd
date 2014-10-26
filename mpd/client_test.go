@@ -72,10 +72,32 @@ func TestPlaylistInfo(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
 
+	// Add sogs to the current playlist.
+	files, err := cli.GetFiles()
+	all := 4
+	if err != nil {
+		t.Errorf("Client.GetFiles failed: %s\n", err)
+		return
+	}
+	if len(files) < all {
+		t.Errorf("Add more then %d audio file to your MPD to run this test.", all)
+		return
+	}
+	for i := 0; i < all; i++ {
+		if err = cli.Add(files[i]); err != nil {
+			t.Errorf("Client.Add failed: %s\n", err)
+			return
+		}
+	}
+
 	pls, err := cli.PlaylistInfo(-1, -1)
 	if err != nil {
 		// We can't use t.Fatalf because defer'ed calls won't run
 		t.Errorf("Client.PlaylistInfo(-1, -1) = %v, %s need _, nil", pls, err)
+		return
+	}
+	if len(pls) != all {
+		t.Errorf("Client.PlaylistInfo(-1, -1) len = %d need %d", len(pls), all)
 		return
 	}
 	for i, song := range pls {
@@ -89,6 +111,16 @@ func TestPlaylistInfo(t *testing.T) {
 		if !attrsEqual(pls[i], pls1[0]) {
 			t.Errorf("song at position %d is %v; want %v", i, pls[i], pls1[0])
 		}
+	}
+
+	pls, err = cli.PlaylistInfo(2, 4)
+	if err != nil {
+		t.Errorf("Client.PlaylistInfo(2, 4) = %v, %s need _, nil", pls, err)
+		return
+	}
+	if len(pls) != 2 {
+		t.Errorf("Client.PlaylistInfo(2, 4) len = %d need 2", len(pls))
+		return
 	}
 }
 

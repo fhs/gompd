@@ -12,6 +12,7 @@ import (
 	"net/textproto"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func unquote(line string, start int) (string, int) {
@@ -169,8 +170,14 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			p.PrintfLine("playlist: %s", k)
 		}
 	case "playlistinfo":
+		var rng []string
 		if len(args) >= 2 {
-			i, err := strconv.Atoi(args[1])
+			rng = strings.Split(args[1], ":")
+		}
+
+		if len(rng) == 1 {
+			// Requesting a single song from the playlist at position i.
+			i, err := strconv.Atoi(rng[0])
 			if err != nil {
 				ack("invalid song position")
 				return
@@ -178,6 +185,30 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(i)]["file"])
 			break
 		}
+
+		if len(rng) == 2 {
+			// Requesting a range of the playlist from specified start/end positions.
+			start, err := strconv.Atoi(rng[0])
+			if err != nil {
+				ack("Integer or range expected")
+				return
+			}
+			end, err := strconv.Atoi(rng[1])
+			if err != nil {
+				ack("Integer or range expected")
+				return
+			}
+			if start < 0 || end < 0 {
+				ack("Number is negative")
+				return
+			}
+			for i := start; i < end; i++ {
+				p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(i)]["file"])
+			}
+			break
+		}
+
+		// Requesting all playlist items.
 		for i := 0; i < s.currentPlaylist.Len(); i++ {
 			p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(i)]["file"])
 		}

@@ -339,7 +339,14 @@ func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err error) {
 		defer c.text.EndResponse(id)
 		return c.readAttrsList("file")
 	}
-	id, err := c.cmd("playlistinfo")
+	var id uint
+	if end >= 0 {
+		// Fetch this range of playlist items.
+		id, err = c.cmd("playlistinfo %d:%d", start, end)
+	} else {
+		// Fetch all playlist items.
+		id, err = c.cmd("playlistinfo")
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +356,7 @@ func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err error) {
 	if err != nil || start < 0 || end < 0 {
 		return
 	}
-	return pls[start:end], nil
+	return pls, nil
 }
 
 // Delete deletes songs from playlist. If both start and end are positive,
