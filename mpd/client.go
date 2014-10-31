@@ -326,37 +326,33 @@ func (c *Client) Repeat(repeat bool) error {
 // playlist. If end is negative but start is positive, it does it for the
 // song at position start. If both start and end are positive, it does it
 // for positions in range [start, end).
-func (c *Client) PlaylistInfo(start, end int) (pls []Attrs, err error) {
-	if start < 0 && end >= 0 {
-		return nil, errors.New("negative start index")
-	}
-	if start >= 0 && end < 0 {
-		id, err := c.cmd("playlistinfo %d", start)
-		if err != nil {
-			return nil, err
-		}
-		c.text.StartResponse(id)
-		defer c.text.EndResponse(id)
-		return c.readAttrsList("file")
-	}
+func (c *Client) PlaylistInfo(start, end int) ([]Attrs, error) {
 	var id uint
-	if end >= 0 {
-		// Fetch this range of playlist items.
-		id, err = c.cmd("playlistinfo %d:%d", start, end)
-	} else {
-		// Fetch all playlist items.
+	var err error
+
+	switch {
+	case start < 0 && end < 0:
+		// Request all playlist items.
 		id, err = c.cmd("playlistinfo")
+	case start >= 0 && end >= 0:
+		// Request this range of playlist items.
+		id, err = c.cmd("playlistinfo %d:%d", start, end)
+	case start >= 0 && end < 0:
+		// Request the single playlist item at this position.
+		id, err = c.cmd("playlistinfo %d", start)
+	case start < 0 && end >= 0:
+		return nil, errors.New("negative start index")
+	default:
+		panic("unreachable")
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
-	pls, err = c.readAttrsList("file")
-	if err != nil || start < 0 || end < 0 {
-		return
-	}
-	return pls, nil
+	return c.readAttrsList("file")
 }
 
 // Delete deletes songs from playlist. If both start and end are positive,
