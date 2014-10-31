@@ -171,6 +171,9 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 		}
 	case "playlistinfo":
 		var rng []string
+		var start int
+		end := s.currentPlaylist.Len()
+
 		if len(args) >= 2 {
 			rng = strings.Split(args[1], ":")
 		}
@@ -182,13 +185,12 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 				ack("invalid song position")
 				return
 			}
-			p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(i)]["file"])
-			break
-		}
-
-		if len(rng) == 2 {
+			start = i
+			end = i + 1
+		} else if len(rng) == 2 {
 			// Requesting a range of the playlist from specified start/end positions.
-			start, err := strconv.Atoi(rng[0])
+			var err error
+			start, err = strconv.Atoi(rng[0])
 			if err != nil {
 				ack("Integer or range expected")
 				return
@@ -202,14 +204,9 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 				ack("Number is negative")
 				return
 			}
-			for i := start; i < end; i++ {
-				p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(i)]["file"])
-			}
-			break
 		}
 
-		// Requesting all playlist items.
-		for i := 0; i < s.currentPlaylist.Len(); i++ {
+		for i := start; i < end; i++ {
 			p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(i)]["file"])
 		}
 	case "listplaylistinfo":
