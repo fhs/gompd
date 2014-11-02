@@ -12,6 +12,7 @@ import (
 	"net/textproto"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func unquote(line string, start int) (string, int) {
@@ -169,16 +170,43 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			p.PrintfLine("playlist: %s", k)
 		}
 	case "playlistinfo":
+		var rng []string
+		var start int
+		end := s.currentPlaylist.Len()
+
 		if len(args) >= 2 {
-			i, err := strconv.Atoi(args[1])
+			rng = strings.Split(args[1], ":")
+		}
+
+		if len(rng) == 1 {
+			// Requesting a single song from the playlist at position i.
+			i, err := strconv.Atoi(rng[0])
 			if err != nil {
 				ack("invalid song position")
 				return
 			}
-			p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(i)]["file"])
-			break
+			start = i
+			end = i + 1
+		} else if len(rng) == 2 {
+			// Requesting a range of the playlist from specified start/end positions.
+			var err error
+			start, err = strconv.Atoi(rng[0])
+			if err != nil {
+				ack("Integer or range expected")
+				return
+			}
+			end, err := strconv.Atoi(rng[1])
+			if err != nil {
+				ack("Integer or range expected")
+				return
+			}
+			if start < 0 || end < 0 {
+				ack("Number is negative")
+				return
+			}
 		}
-		for i := 0; i < s.currentPlaylist.Len(); i++ {
+
+		for i := start; i < end; i++ {
 			p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(i)]["file"])
 		}
 	case "listplaylistinfo":
