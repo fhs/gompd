@@ -72,7 +72,7 @@ func TestPlaylistInfo(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
 
-	// Add sogs to the current playlist.
+	// Add songs to the current playlist.
 	files, err := cli.GetFiles()
 	all := 4
 	if err != nil {
