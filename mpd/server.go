@@ -371,7 +371,7 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			s.pos = s.currentPlaylist.Len() - 1
 			break
 		}
-		s.pos -= 1
+		s.pos--
 	case "pause":
 		if s.state != "stop" {
 			s.state = args[0]
@@ -430,7 +430,7 @@ func (s *server) readRequest(p *textproto.Conn) (*request, error) {
 	}
 	switch args[0] {
 	case "command_list_ok_begin":
-		cmdList := make([][]string, 0)
+		var cmdList [][]string
 		for {
 			line, err := p.ReadLine()
 			if err == io.EOF {

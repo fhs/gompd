@@ -572,7 +572,7 @@ func (c *Client) List(uri string) ([]string, error) {
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
 
-	ret := make([]string, 0)
+	var ret []string
 	for {
 		line, err := c.text.ReadLine()
 		if err != nil {
