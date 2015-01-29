@@ -4,14 +4,22 @@
 
 package mpd
 
+// Function to build Event to be pushed to public channel
+type EventBuilder func(subsystem string, conn *Client) interface{}
+
+func subsystemNameEvent(subsystem string, conn *Client) interface{} {
+	return subsystem
+}
+
 // Watcher represents a MPD client connection that can be watched for events.
 type Watcher struct {
-	conn  *Client       // client connection to MPD
-	exit  chan bool     // channel used to ask loop to terminate
-	done  chan bool     // channel indicating loop has terminated
-	names chan []string // channel to set new subsystems to watch
-	Event chan string   // event channel
-	Error chan error    // error channel
+	conn         *Client          // client connection to MPD
+	exit         chan bool        // channel used to ask loop to terminate
+	done         chan bool        // channel indicating loop has terminated
+	names        chan []string    // channel to set new subsystems to watch
+	Event        chan interface{} // event channel
+	Error        chan error       // error channel
+	eventBuilder EventBuilder     // function to build event
 }
 
 // NewWatcher connects to MPD server and watches for changes in subsystems
@@ -20,18 +28,23 @@ type Watcher struct {
 // See http://www.musicpd.org/doc/protocol/ch03.html#command_idle for valid
 // subsystem names.
 func NewWatcher(net, addr, passwd string, names ...string) (w *Watcher, err error) {
+	return NewFancyWatcher(net, addr, passwd, subsystemNameEvent, names...)
+}
+
+func NewFancyWatcher(net, addr, passwd string, eventBuilder EventBuilder, names ...string) (w *Watcher, err error) {
 	conn, err := DialAuthenticated(net, addr, passwd)
 	if err != nil {
 		return
 	}
 	w = &Watcher{
 		conn:  conn,
-		Event: make(chan string),
+		Event: make(chan interface{}),
 		Error: make(chan error),
 		done:  make(chan bool),
 		// Buffer channels to avoid race conditions with noIdle
-		names: make(chan []string, 1),
-		exit:  make(chan bool, 1),
+		names:        make(chan []string, 1),
+		exit:         make(chan bool, 1),
+		eventBuilder: eventBuilder,
 	}
 	go w.watch(names...)
 	return
@@ -61,7 +74,7 @@ func (w *Watcher) watch(names ...string) {
 			w.Error <- err
 		default:
 			for _, name := range changed {
-				w.Event <- name
+				w.Event <- w.eventBuilder(name, w.conn)
 			}
 		}
 		select {
