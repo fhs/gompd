@@ -77,8 +77,9 @@ func (w *Watcher) watch(names ...string) {
 				event, err := w.eventBuilder(name, w.conn)
 				if err != nil {
 					w.Error <- err
+				} else {
+					w.Event <- event
 				}
-				w.Event <- event
 			}
 		}
 		select {
