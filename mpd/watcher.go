@@ -5,10 +5,10 @@
 package mpd
 
 // Function to build Event to be pushed to public channel
-type EventBuilder func(subsystem string, conn *Client) interface{}
+type EventBuilder func(subsystem string, conn *Client) (interface{}, error)
 
-func subsystemNameEvent(subsystem string, conn *Client) interface{} {
-	return subsystem
+func subsystemNameEvent(subsystem string, conn *Client) (interface{}, error) {
+	return subsystem, nil
 }
 
 // Watcher represents a MPD client connection that can be watched for events.
@@ -74,7 +74,11 @@ func (w *Watcher) watch(names ...string) {
 			w.Error <- err
 		default:
 			for _, name := range changed {
-				w.Event <- w.eventBuilder(name, w.conn)
+				event, err := w.eventBuilder(name, w.conn)
+				if err != nil {
+					w.Error <- err
+				}
+				w.Event <- event
 			}
 		}
 		select {
