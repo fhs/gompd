@@ -390,6 +390,13 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			s.pos = 0
 		}
 		p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(s.pos)]["file"])
+	case "outputs":
+		p.PrintfLine("outputid: 0")
+		p.PrintfLine("outputenabled: 1")
+		p.PrintfLine("outputname: downstairs")
+		p.PrintfLine("outputid: 1")
+		p.PrintfLine("outputenabled: 0")
+		p.PrintfLine("outputname: upstairs")
 	default:
 		p.PrintfLine("ACK {} unknown command %q", args[0])
 		log.Printf("unknown command: %s\n", args[0])
