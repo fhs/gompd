@@ -397,6 +397,7 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 		p.PrintfLine("outputid: 1")
 		p.PrintfLine("outputenabled: 0")
 		p.PrintfLine("outputname: upstairs")
+	case "disableoutput", "enableoutput":
 	default:
 		p.PrintfLine("ACK {} unknown command %q", args[0])
 		log.Printf("unknown command: %s\n", args[0])

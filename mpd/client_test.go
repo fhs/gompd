@@ -238,6 +238,28 @@ func TestListOutputs(t *testing.T) {
 	}
 }
 
+func TestEnableOutput(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	err := cli.EnableOutput(1)
+	if err != nil {
+		t.Errorf("Client.EnableOutput failed: %s\n", err)
+		return
+	}
+}
+
+func TestDisableOutput(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	err := cli.DisableOutput(1)
+	if err != nil {
+		t.Errorf("Client.DisableOutput failed: %s\n", err)
+		return
+	}
+}
+
 func TestPlaylistFunctions(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)

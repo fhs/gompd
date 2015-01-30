@@ -639,6 +639,28 @@ func (c *Client) ListOutputs() ([]map[string]interface{}, error) {
 	return outputs, nil
 }
 
+// EnableOutput enables the audio output with the given id.
+func (c *Client) EnableOutput(id uint) error {
+	id, err := c.cmd("enableoutput %d", id)
+	if err != nil {
+		return err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	return nil
+}
+
+// DisableOutput disables the audio output with the given id.
+func (c *Client) DisableOutput(id uint) error {
+	id, err := c.cmd("disableoutput %d", id)
+	if err != nil {
+		return err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	return nil
+}
+
 // Stored playlists related commands
 
 // ListPlaylists lists all stored playlists.
