@@ -17,8 +17,8 @@ type Watcher struct {
 // NewWatcher connects to MPD server and watches for changes in subsystems
 // names. If no subsystem is specified, all changes are reported.
 //
-// See http://www.musicpd.org/doc/protocol/ch03.html#command_idle for valid
-// subsystem names.
+// See http://www.musicpd.org/doc/protocol/command_reference.html#command_idle
+// for valid subsystem names.
 func NewWatcher(net, addr, passwd string, names ...string) (w *Watcher, err error) {
 	conn, err := DialAuthenticated(net, addr, passwd)
 	if err != nil {
