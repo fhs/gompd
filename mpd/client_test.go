@@ -216,13 +216,15 @@ func TestListOutputs(t *testing.T) {
 		t.Errorf(`Client.ListOutputs() = %v, %s need _, nil`, outputs, err)
 		return
 	}
-
-	expected := []map[string]interface{}{}
-	expected = append(expected,
-		map[string]interface{}{"id": 0, "name": "downstairs", "enabled": true})
-	expected = append(expected,
-		map[string]interface{}{"id": 1, "name": "upstairs", "enabled": false})
-
+	expected := []Attrs{{
+		"outputid":      "0",
+		"outputname":    "downstairs",
+		"outputenabled": "1",
+	}, {
+		"outputid":      "1",
+		"outputname":    "upstairs",
+		"outputenabled": "0",
+	}}
 	if len(outputs) != 2 {
 		t.Errorf(`Listed %d outputs, expected %d`, len(outputs), 2)
 	}

@@ -594,49 +594,14 @@ func (c *Client) List(uri string) ([]string, error) {
 // Output related commands.
 
 // ListOutputs lists all configured outputs with their name, id & enabled state.
-func (c *Client) ListOutputs() ([]map[string]interface{}, error) {
-	outputs := []map[string]interface{}{}
+func (c *Client) ListOutputs() ([]Attrs, error) {
 	id, err := c.cmd("outputs")
 	if err != nil {
 		return nil, err
 	}
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
-	// var output map[string]string
-	for {
-		line, err := c.text.ReadLine()
-		if err != nil {
-			return nil, err
-		}
-		if line == "OK" {
-			break
-		}
-		if strings.HasPrefix(line, "outputid") {
-			outputs = append(outputs, map[string]interface{}{})
-		}
-		i := strings.Index(line, ": ")
-		if i < 0 {
-			return nil, textproto.ProtocolError("can't parse line: " + line)
-		}
-		key := line[6:i]
-		switch key {
-		case "enabled":
-			if line[i+2:] == "1" {
-				outputs[len(outputs)-1][key] = true
-			} else {
-				outputs[len(outputs)-1][key] = false
-			}
-		case "id":
-			id, err := strconv.Atoi(line[i+2:])
-			if err != nil {
-				return nil, textproto.ProtocolError("can't parse output id: " + line)
-			}
-			outputs[len(outputs)-1][key] = id
-		default:
-			outputs[len(outputs)-1][key] = line[i+2:]
-		}
-	}
-	return outputs, nil
+	return c.readAttrsList("outputid")
 }
 
 // EnableOutput enables the audio output with the given id.
