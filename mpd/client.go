@@ -605,25 +605,13 @@ func (c *Client) ListOutputs() ([]Attrs, error) {
 }
 
 // EnableOutput enables the audio output with the given id.
-func (c *Client) EnableOutput(id uint) error {
-	id, err := c.cmd("enableoutput %d", id)
-	if err != nil {
-		return err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return nil
+func (c *Client) EnableOutput(id int) error {
+	return c.okCmd("enableoutput %d", id)
 }
 
 // DisableOutput disables the audio output with the given id.
-func (c *Client) DisableOutput(id uint) error {
-	id, err := c.cmd("disableoutput %d", id)
-	if err != nil {
-		return err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return nil
+func (c *Client) DisableOutput(id int) error {
+	return c.okCmd("disableoutput %d", id)
 }
 
 // Stored playlists related commands
