@@ -20,13 +20,11 @@ func localWatch(t *testing.T, names ...string) *Watcher {
 
 func loadTestFiles(t *testing.T, cli *Client, n int) (ok bool) {
 	if err := cli.Clear(); err != nil {
-		t.Errorf("Client.Clear failed: %s\n", err)
-		return
+		t.Fatalf("Client.Clear failed: %s\n", err)
 	}
 	files, err := cli.GetFiles()
 	if err != nil {
-		t.Errorf("Client.GetFiles failed: %s\n", err)
-		return
+		t.Fatalf("Client.GetFiles failed: %s\n", err)
 	}
 	if len(files) < n {
 		t.Log("Add files to your MPD to run this test.")
@@ -34,8 +32,7 @@ func loadTestFiles(t *testing.T, cli *Client, n int) (ok bool) {
 	}
 	for i := 0; i < n; i++ {
 		if err = cli.Add(files[i]); err != nil {
-			t.Errorf("Client.Add failed: %s\n", err)
-			return
+			t.Fatalf("Client.Add failed: %s\n", err)
 		}
 	}
 	return true
@@ -55,47 +52,38 @@ func TestWatcher(t *testing.T) {
 	<-time.After(time.Second)
 
 	if err := c.Play(-1); err != nil { // player change
-		t.Errorf("Client.Play failed: %s\n", err)
-		return
+		t.Fatalf("Client.Play failed: %s\n", err)
 	}
 	if err := c.Next(); err != nil { // player change
-		t.Errorf("Client.Next failed: %s\n", err)
-		return
+		t.Fatalf("Client.Next failed: %s\n", err)
 	}
 	if err := c.Previous(); err != nil { // player change
-		t.Errorf("Client.Previous failed: %s\n", err)
-		return
+		t.Fatalf("Client.Previous failed: %s\n", err)
 	}
 
 	select {
 	case subsystem := <-w.Event:
 		if subsystem != "player" {
-			t.Errorf("Unexpected result: %q != \"player\"\n", subsystem)
-			return
+			t.Fatalf("Unexpected result: %q != \"player\"\n", subsystem)
 		}
 	case err := <-w.Error:
-		t.Errorf("Client.idle failed: %s\n", err)
-		return
+		t.Fatalf("Client.idle failed: %s\n", err)
 	}
 
 	w.Subsystems("options", "playlist")
 	if err := c.Stop(); err != nil { // player change
-		t.Errorf("Client.Stop failed: %s\n", err)
-		return
+		t.Fatalf("Client.Stop failed: %s\n", err)
 	}
 	if err := c.Delete(5, -1); err != nil { // playlist change
-		t.Errorf("Client.Delete failed: %s\n", err)
-		return
+		t.Fatalf("Client.Delete failed: %s\n", err)
 	}
 
 	select {
 	case subsystem := <-w.Event:
 		if subsystem != "playlist" {
-			t.Errorf("Unexpected result: %q != \"playlist\"\n", subsystem)
-			return
+			t.Fatalf("Unexpected result: %q != \"playlist\"\n", subsystem)
 		}
 	case err := <-w.Error:
-		t.Errorf("Client.idle failed: %s\n", err)
-		return
+		t.Fatalf("Client.idle failed: %s\n", err)
 	}
 }

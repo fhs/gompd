@@ -76,29 +76,23 @@ func TestPlaylistInfo(t *testing.T) {
 	files, err := cli.GetFiles()
 	all := 4
 	if err != nil {
-		t.Errorf("Client.GetFiles failed: %s\n", err)
-		return
+		t.Fatalf("Client.GetFiles failed: %s\n", err)
 	}
 	if len(files) < all {
-		t.Errorf("Add more then %d audio file to your MPD to run this test.", all)
-		return
+		t.Fatalf("Add more then %d audio file to your MPD to run this test.", all)
 	}
 	for i := 0; i < all; i++ {
 		if err = cli.Add(files[i]); err != nil {
-			t.Errorf("Client.Add failed: %s\n", err)
-			return
+			t.Fatalf("Client.Add failed: %s\n", err)
 		}
 	}
 
 	pls, err := cli.PlaylistInfo(-1, -1)
 	if err != nil {
-		// We can't use t.Fatalf because defer'ed calls won't run
-		t.Errorf("Client.PlaylistInfo(-1, -1) = %v, %s need _, nil", pls, err)
-		return
+		t.Fatalf("Client.PlaylistInfo(-1, -1) = %v, %s need _, nil", pls, err)
 	}
 	if len(pls) != all {
-		t.Errorf("Client.PlaylistInfo(-1, -1) len = %d need %d", len(pls), all)
-		return
+		t.Fatalf("Client.PlaylistInfo(-1, -1) len = %d need %d", len(pls), all)
 	}
 	for i, song := range pls {
 		if _, ok := song["file"]; !ok {
@@ -115,12 +109,10 @@ func TestPlaylistInfo(t *testing.T) {
 
 	pls, err = cli.PlaylistInfo(2, 4)
 	if err != nil {
-		t.Errorf("Client.PlaylistInfo(2, 4) = %v, %s need _, nil", pls, err)
-		return
+		t.Fatalf("Client.PlaylistInfo(2, 4) = %v, %s need _, nil", pls, err)
 	}
 	if len(pls) != 2 {
-		t.Errorf("Client.PlaylistInfo(2, 4) len = %d need 2", len(pls))
-		return
+		t.Fatalf("Client.PlaylistInfo(2, 4) len = %d need 2", len(pls))
 	}
 }
 
@@ -132,9 +124,7 @@ func TestListInfo(t *testing.T) {
 
 	ls, err := cli.ListInfo("")
 	if err != nil {
-		// We can't use t.Fatalf because defer'ed calls won't run
-		t.Errorf(`Client.ListInfo("") = %v, %s need _, nil`, ls, err)
-		return
+		t.Fatalf(`Client.ListInfo("") = %v, %s need _, nil`, ls, err)
 	}
 	for i, item := range ls {
 		if _, ok := item["file"]; ok {
@@ -170,16 +160,14 @@ func TestCurrentSong(t *testing.T) {
 
 	attrs, err := cli.CurrentSong()
 	if err != nil {
-		t.Errorf("Client.CurrentSong() = %v, %s need _, nil", attrs, err)
-		return
+		t.Fatalf("Client.CurrentSong() = %v, %s need _, nil", attrs, err)
 	}
 	if len(attrs) == 0 {
 		return // no current song
 	}
 	_, ok := attrs["file"]
 	if !ok {
-		t.Errorf("current song (attrs=%v) has no file attribute", attrs)
-		return
+		t.Fatalf("current song (attrs=%v) has no file attribute", attrs)
 	}
 }
 
@@ -199,8 +187,7 @@ func TestUpdate(t *testing.T) {
 
 	id, err := cli.Update("")
 	if err != nil {
-		t.Errorf("Client.Update failed: %s\n", err)
-		return
+		t.Fatalf("Client.Update failed: %s\n", err)
 	}
 	if id < 1 {
 		t.Errorf("job id is too small: %d\n", id)
@@ -213,8 +200,7 @@ func TestListOutputs(t *testing.T) {
 
 	outputs, err := cli.ListOutputs()
 	if err != nil {
-		t.Errorf(`Client.ListOutputs() = %v, %s need _, nil`, outputs, err)
-		return
+		t.Fatalf(`Client.ListOutputs() = %v, %s need _, nil`, outputs, err)
 	}
 	expected := []Attrs{{
 		"outputid":      "0",
@@ -246,8 +232,7 @@ func TestEnableOutput(t *testing.T) {
 
 	err := cli.EnableOutput(1)
 	if err != nil {
-		t.Errorf("Client.EnableOutput failed: %s\n", err)
-		return
+		t.Fatalf("Client.EnableOutput failed: %s\n", err)
 	}
 }
 
@@ -257,8 +242,7 @@ func TestDisableOutput(t *testing.T) {
 
 	err := cli.DisableOutput(1)
 	if err != nil {
-		t.Errorf("Client.DisableOutput failed: %s\n", err)
-		return
+		t.Fatalf("Client.DisableOutput failed: %s\n", err)
 	}
 }
 
@@ -268,8 +252,7 @@ func TestPlaylistFunctions(t *testing.T) {
 
 	files, err := cli.GetFiles()
 	if err != nil {
-		t.Errorf("Client.GetFiles failed: %s\n", err)
-		return
+		t.Fatalf("Client.GetFiles failed: %s\n", err)
 	}
 	if len(files) < 2 {
 		t.Log("Add more then 1 audio file to your MPD to run this test.")
@@ -277,101 +260,79 @@ func TestPlaylistFunctions(t *testing.T) {
 	}
 	for i := 0; i < 2; i++ {
 		if err = cli.PlaylistAdd("Test Playlist", files[i]); err != nil {
-			t.Errorf("Client.PlaylistAdd failed: %s\n", err)
-			return
+			t.Fatalf("Client.PlaylistAdd failed: %s\n", err)
 		}
 	}
 	attrs, err := cli.ListPlaylists()
 	if err != nil {
-		t.Errorf("Client.ListPlaylists failed: %s\n", err)
-		return
+		t.Fatalf("Client.ListPlaylists failed: %s\n", err)
 	}
 	if i := attrsListIndex(attrs, "playlist", "Test Playlist"); i < 0 {
-		t.Errorf("Couldn't find playlist \"Test Playlist\" in %v\n", attrs)
-		return
+		t.Fatalf("Couldn't find playlist \"Test Playlist\" in %v\n", attrs)
 	}
 	attrs, err = cli.PlaylistContents("Test Playlist")
 	if err != nil {
-		t.Errorf("Client.PlaylistContents failed: %s\n", err)
-		return
+		t.Fatalf("Client.PlaylistContents failed: %s\n", err)
 	}
 	if i := attrsListIndex(attrs, "file", files[0]); i < 0 {
-		t.Errorf("Couldn't find song %q in %v", files[0], attrs)
-		return
+		t.Fatalf("Couldn't find song %q in %v", files[0], attrs)
 	}
 	if err = cli.PlaylistDelete("Test Playlist", 0); err != nil {
-		t.Errorf("Client.PlaylistDelete failed: %s\n", err)
-		return
+		t.Fatalf("Client.PlaylistDelete failed: %s\n", err)
 	}
 	playlist, err := cli.PlaylistContents("Test Playlist")
 	if err != nil {
-		t.Errorf("Client.PlaylistContents failed: %s\n", err)
-		return
+		t.Fatalf("Client.PlaylistContents failed: %s\n", err)
 	}
 	if !attrsListEqual(playlist, attrs[1:]) {
-		t.Errorf("PlaylistContents returned %v; want %v", playlist, attrs[1:])
-		return
+		t.Fatalf("PlaylistContents returned %v; want %v", playlist, attrs[1:])
 	}
 	cli.PlaylistRemove("Test Playlist 2")
 	if err = cli.PlaylistRename("Test Playlist", "Test Playlist 2"); err != nil {
-		t.Errorf("Client.PlaylistRename failed: %s\n", err)
-		return
+		t.Fatalf("Client.PlaylistRename failed: %s\n", err)
 	}
 	if err = cli.Clear(); err != nil {
-		t.Errorf("Client.Clear failed: %s\n", err)
-		return
+		t.Fatalf("Client.Clear failed: %s\n", err)
 	}
 	if err = cli.PlaylistLoad("Test Playlist 2", -1, -1); err != nil {
-		t.Errorf("Client.Load failed: %s\n", err)
-		return
+		t.Fatalf("Client.Load failed: %s\n", err)
 	}
 	attrs, err = cli.PlaylistInfo(-1, -1)
 	if err != nil {
-		t.Errorf("Client.PlaylistInfo failed: %s\n", err)
-		return
+		t.Fatalf("Client.PlaylistInfo failed: %s\n", err)
 	}
 	if !attrsListEqualKey(playlist, attrs, "file") {
-		t.Errorf("Unexpected playlist: %v != %v\n", attrs, playlist)
-		return
+		t.Fatalf("Unexpected playlist: %v != %v\n", attrs, playlist)
 	}
 	if err = cli.PlaylistClear("Test Playlist 2"); err != nil {
-		t.Errorf("Client.PlaylistClear failed: %s\n", err)
-		return
+		t.Fatalf("Client.PlaylistClear failed: %s\n", err)
 	}
 	attrs, err = cli.PlaylistContents("Test Playlist 2")
 	if err != nil {
-		t.Errorf("Client.PlaylistContents failed: %s\n", err)
-		return
+		t.Fatalf("Client.PlaylistContents failed: %s\n", err)
 	}
 	if len(attrs) != 0 {
-		t.Errorf("Unexpected number of songs: %d != 0\n", len(attrs))
-		return
+		t.Fatalf("Unexpected number of songs: %d != 0\n", len(attrs))
 	}
 	if err = cli.PlaylistRemove("Test Playlist 2"); err != nil {
-		t.Errorf("Client.PlaylistRemove failed: %s\n", err)
-		return
+		t.Fatalf("Client.PlaylistRemove failed: %s\n", err)
 	}
 	attrs, err = cli.ListPlaylists()
 	if err != nil {
-		t.Errorf("Client.ListPlaylists failed: %s\n", err)
-		return
+		t.Fatalf("Client.ListPlaylists failed: %s\n", err)
 	}
 	if i := attrsListIndex(attrs, "playlist", "Test Playlist 2"); i > -1 {
-		t.Errorf("Found playlist \"Test Playlist 2\" in %v\n", attrs)
-		return
+		t.Fatalf("Found playlist \"Test Playlist 2\" in %v\n", attrs)
 	}
 	if err = cli.PlaylistSave("Test Playlist"); err != nil {
-		t.Errorf("Client.PlaylistSave failed: %s\n", err)
-		return
+		t.Fatalf("Client.PlaylistSave failed: %s\n", err)
 	}
 	attrs, err = cli.PlaylistContents("Test Playlist")
 	if err != nil {
-		t.Errorf("Client.PlaylistContents failed: %s\n", err)
-		return
+		t.Fatalf("Client.PlaylistContents failed: %s\n", err)
 	}
 	if !attrsListEqual(playlist, attrs) {
-		t.Errorf("Unexpected playlist: %v != %v\n", attrs, playlist)
-		return
+		t.Fatalf("Unexpected playlist: %v != %v\n", attrs, playlist)
 	}
 }
 
