@@ -73,8 +73,8 @@ func TestPlaylistInfo(t *testing.T) {
 	defer teardown(cli, t)
 
 	// Add songs to the current playlist.
-	files, err := cli.GetFiles()
 	all := 4
+	files, err := cli.GetFiles()
 	if err != nil {
 		t.Fatalf("Client.GetFiles failed: %s\n", err)
 	}
@@ -165,8 +165,7 @@ func TestCurrentSong(t *testing.T) {
 	if len(attrs) == 0 {
 		return // no current song
 	}
-	_, ok := attrs["file"]
-	if !ok {
+	if _, ok := attrs["file"]; !ok {
 		t.Fatalf("current song (attrs=%v) has no file attribute", attrs)
 	}
 }
@@ -175,8 +174,7 @@ func TestPing(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
 
-	err := cli.Ping()
-	if err != nil {
+	if err := cli.Ping(); err != nil {
 		t.Errorf("Client.Ping failed: %s\n", err)
 	}
 }
@@ -230,8 +228,7 @@ func TestEnableOutput(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
 
-	err := cli.EnableOutput(1)
-	if err != nil {
+	if err := cli.EnableOutput(1); err != nil {
 		t.Fatalf("Client.EnableOutput failed: %s\n", err)
 	}
 }
@@ -240,8 +237,7 @@ func TestDisableOutput(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
 
-	err := cli.DisableOutput(1)
-	if err != nil {
+	if err := cli.DisableOutput(1); err != nil {
 		t.Fatalf("Client.DisableOutput failed: %s\n", err)
 	}
 }
