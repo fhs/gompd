@@ -591,6 +591,29 @@ func (c *Client) List(uri string) ([]string, error) {
 	return ret, nil
 }
 
+// Output related commands.
+
+// ListOutputs lists all configured outputs with their name, id & enabled state.
+func (c *Client) ListOutputs() ([]Attrs, error) {
+	id, err := c.cmd("outputs")
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	return c.readAttrsList("outputid")
+}
+
+// EnableOutput enables the audio output with the given id.
+func (c *Client) EnableOutput(id int) error {
+	return c.okCmd("enableoutput %d", id)
+}
+
+// DisableOutput disables the audio output with the given id.
+func (c *Client) DisableOutput(id int) error {
+	return c.okCmd("disableoutput %d", id)
+}
+
 // Stored playlists related commands
 
 // ListPlaylists lists all stored playlists.

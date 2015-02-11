@@ -207,6 +207,61 @@ func TestUpdate(t *testing.T) {
 	}
 }
 
+func TestListOutputs(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	outputs, err := cli.ListOutputs()
+	if err != nil {
+		t.Errorf(`Client.ListOutputs() = %v, %s need _, nil`, outputs, err)
+		return
+	}
+	expected := []Attrs{{
+		"outputid":      "0",
+		"outputname":    "downstairs",
+		"outputenabled": "1",
+	}, {
+		"outputid":      "1",
+		"outputname":    "upstairs",
+		"outputenabled": "0",
+	}}
+	if len(outputs) != 2 {
+		t.Errorf(`Listed %d outputs, expected %d`, len(outputs), 2)
+	}
+	for i, o := range outputs {
+		if len(o) != 3 {
+			t.Errorf(`Output should contain 3 keys, got %d`, len(o))
+		}
+		for k, v := range expected[i] {
+			if outputs[i][k] != v {
+				t.Errorf(`Expected property %o for key "%s", got %o`, v, k, outputs[i][k])
+			}
+		}
+	}
+}
+
+func TestEnableOutput(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	err := cli.EnableOutput(1)
+	if err != nil {
+		t.Errorf("Client.EnableOutput failed: %s\n", err)
+		return
+	}
+}
+
+func TestDisableOutput(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	err := cli.DisableOutput(1)
+	if err != nil {
+		t.Errorf("Client.DisableOutput failed: %s\n", err)
+		return
+	}
+}
+
 func TestPlaylistFunctions(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
