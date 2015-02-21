@@ -14,6 +14,9 @@ import (
 	"strings"
 )
 
+// BUG(fhs): Initialism is used for several methods with "ID" in the name
+// (e.g. PlayId should be PlayID).
+
 // Quote quotes strings in the format understood by MPD.
 // See: http://git.musicpd.org/cgit/master/mpd.git/tree/src/util/Tokenizer.cxx
 func quote(s string) string {
