@@ -7,6 +7,8 @@ package mpd
 import (
 	"os"
 	"testing"
+
+	"github.com/fhs/gompd/mpd/internal/server"
 )
 
 var (
@@ -39,7 +41,7 @@ func localDial(t *testing.T) *Client {
 	net, addr := localAddr()
 	if useGoMPDServer && !serverRunning {
 		running := make(chan bool)
-		go serve(net, addr, running)
+		go server.Listen(net, addr, running)
 		serverRunning = true
 		<-running
 	}

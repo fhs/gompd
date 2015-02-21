@@ -2,7 +2,8 @@
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file
 
-package mpd
+// Package server implements a fake MPD server that's used to test gompd client.
+package server
 
 import (
 	"fmt"
@@ -14,6 +15,9 @@ import (
 	"strconv"
 	"strings"
 )
+
+// Attrs is a set of attributes returned by MPD.
+type Attrs map[string]string
 
 func unquote(line string, start int) (string, int) {
 	i := start
@@ -627,7 +631,9 @@ func (s *server) broadcastIdleEvents() {
 	}
 }
 
-func serve(network, addr string, listening chan bool) {
+// Listen starts the server on the network network and address addr.
+// Once the server has started, a value is sent to listening channel.
+func Listen(network, addr string, listening chan bool) {
 	ln, err := net.Listen(network, addr)
 	if err != nil {
 		log.Fatalf("Listen failed: %v\n", err)
