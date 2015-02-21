@@ -14,9 +14,6 @@ import (
 	"strings"
 )
 
-// BUG(fhs): Initialism is used for several methods with "ID" in the name
-// (e.g. PlayId should be PlayID).
-
 // Quote quotes strings in the format understood by MPD.
 // See: http://git.musicpd.org/cgit/master/mpd.git/tree/src/util/Tokenizer.cxx
 func quote(s string) string {
@@ -269,9 +266,9 @@ func (c *Client) Play(pos int) error {
 	return c.okCmd("play %d", pos)
 }
 
-// PlayId plays the song identified by id. If id is negative, start playing
+// PlayID plays the song identified by id. If id is negative, start playing
 // at the current position in playlist.
-func (c *Client) PlayId(id int) error {
+func (c *Client) PlayID(id int) error {
 	if id < 0 {
 		return c.okCmd("playid")
 	}
@@ -288,9 +285,9 @@ func (c *Client) Seek(pos, time int) error {
 	return c.okCmd("seek %d %d", pos, time)
 }
 
-// SeekId is identical to Seek except the song is identified by it's id
+// SeekID is identical to Seek except the song is identified by it's id
 // (not position in playlist).
-func (c *Client) SeekId(id, time int) error {
+func (c *Client) SeekID(id, time int) error {
 	return c.okCmd("seekid %d %d", id, time)
 }
 
@@ -371,8 +368,8 @@ func (c *Client) Delete(start, end int) error {
 	return c.okCmd("delete %d:%d", start, end)
 }
 
-// DeleteId deletes the song identified by id.
-func (c *Client) DeleteId(id int) error {
+// DeleteID deletes the song identified by id.
+func (c *Client) DeleteID(id int) error {
 	return c.okCmd("deleteid %d", id)
 }
 
@@ -388,8 +385,8 @@ func (c *Client) Move(start, end, position int) error {
 	return c.okCmd("move %d:%d %d", start, end, position)
 }
 
-// MoveId moves songid to position on the plyalist.
-func (c *Client) MoveId(songid, position int) error {
+// MoveID moves songid to position on the plyalist.
+func (c *Client) MoveID(songid, position int) error {
 	return c.okCmd("moveid %d %d", songid, position)
 }
 
@@ -398,10 +395,10 @@ func (c *Client) Add(uri string) error {
 	return c.okCmd("add %s", quote(uri))
 }
 
-// AddId adds the file/directory uri to playlist and returns the identity
+// AddID adds the file/directory uri to playlist and returns the identity
 // id of the song added. If pos is positive, the song is added to position
 // pos.
-func (c *Client) AddId(uri string, pos int) (int, error) {
+func (c *Client) AddID(uri string, pos int) (int, error) {
 	var id uint
 	var err error
 	if pos >= 0 {
@@ -458,7 +455,7 @@ func (c *Client) GetFiles() ([]string, error) {
 // modified files. uri is a particular directory or file to update. If it is an
 // empty string, everything is updated.
 //
-// The returned jobId identifies the update job, enqueued by MPD.
+// The returned jobID identifies the update job, enqueued by MPD.
 func (c *Client) Update(uri string) (jobID int, err error) {
 	id, err := c.cmd("update %s", quote(uri))
 	if err != nil {

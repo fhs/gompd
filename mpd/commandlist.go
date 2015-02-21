@@ -43,8 +43,8 @@ func newPromisedAttrs() *PromisedAttrs {
 	return &PromisedAttrs{attrs: make(Attrs), computed: false}
 }
 
-// PromisedId is a promised identifier (to be) returned by MPD.
-type PromisedId int
+// PromisedID is a promised identifier (to be) returned by MPD.
+type PromisedID int
 
 // Value is a convenience method for ensuring that a promise
 // has been computed, returning the Attrs.
@@ -57,7 +57,7 @@ func (pa *PromisedAttrs) Value() (Attrs, error) {
 
 // Value is a convenience method for ensuring that a promise
 // has been computed, returning the ID.
-func (pi *PromisedId) Value() (int, error) {
+func (pi *PromisedID) Value() (int, error) {
 	if *pi == -1 {
 		return -1, errors.New("value has not been computed yet")
 	}
@@ -117,9 +117,9 @@ func (cl *CommandList) Play(pos int) {
 	}
 }
 
-// PlayId plays the song identified by id. If id is negative, start playing
+// PlayID plays the song identified by id. If id is negative, start playing
 // at the currect position in playlist.
-func (cl *CommandList) PlayId(id int) {
+func (cl *CommandList) PlayID(id int) {
 	if id < 0 {
 		cl.cmdQ.PushBack(&command{"playid", nil, cmdNoReturn})
 	} else {
@@ -137,9 +137,9 @@ func (cl *CommandList) Seek(pos, time int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("seek %d %d", pos, time), nil, cmdNoReturn})
 }
 
-// SeekId is identical to Seek except the song is identified by it's id
+// SeekID is identical to Seek except the song is identified by it's id
 // (not position in playlist).
-func (cl *CommandList) SeekId(id, time int) {
+func (cl *CommandList) SeekID(id, time int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("seek %d %d", id, time), nil, cmdNoReturn})
 }
 
@@ -190,8 +190,8 @@ func (cl *CommandList) Delete(start, end int) error {
 	return nil
 }
 
-// DeleteId deletes the song identified by id.
-func (cl *CommandList) DeleteId(id int) {
+// DeleteID deletes the song identified by id.
+func (cl *CommandList) DeleteID(id int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("deleteid %d", id), nil, cmdNoReturn})
 }
 
@@ -209,8 +209,8 @@ func (cl *CommandList) Move(start, end, position int) error {
 	return nil
 }
 
-// MoveId moves songid to position on the playlist.
-func (cl *CommandList) MoveId(songid, position int) {
+// MoveID moves songid to position on the playlist.
+func (cl *CommandList) MoveID(songid, position int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("moveid %d %d", songid, position), nil, cmdNoReturn})
 }
 
@@ -219,11 +219,11 @@ func (cl *CommandList) Add(uri string) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("add %s", quote(uri)), nil, cmdNoReturn})
 }
 
-// AddId adds the file/directory uri to playlist and returns the identity
+// AddID adds the file/directory uri to playlist and returns the identity
 // id of the song added. If pos is positive, the song is added to position
 // pos.
-func (cl *CommandList) AddId(uri string, pos int) *PromisedId {
-	var id PromisedId = -1
+func (cl *CommandList) AddID(uri string, pos int) *PromisedID {
+	var id PromisedID = -1
 	if pos >= 0 {
 		cl.cmdQ.PushBack(&command{fmt.Sprintf("addid %s %d", quote(uri), pos), &id, cmdIDReturn})
 	} else {
@@ -365,7 +365,7 @@ func (cl *CommandList) End() error {
 			if ridErr != nil {
 				return ridErr
 			}
-			*(e.Value.(*command).promise.(*PromisedId)) = (PromisedId)(rid)
+			*(e.Value.(*command).promise.(*PromisedID)) = PromisedID(rid)
 
 		}
 	}
