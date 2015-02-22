@@ -36,7 +36,7 @@ func quote(s string) string {
 // See: http://git.musicpd.org/cgit/master/mpd.git/tree/src/util/Tokenizer.cxx
 func quoteArgs(args []string) string {
 	quoted := make([]string, len(args))
-	for index, arg := range(args) {
+	for index, arg := range args {
 		quoted[index] = quote(arg)
 	}
 	return strings.Join(quoted, " ")
