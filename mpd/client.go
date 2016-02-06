@@ -317,6 +317,22 @@ func (c *Client) Repeat(repeat bool) error {
 	return c.okCmd("repeat 0")
 }
 
+// Single enables single song mode, if single is true, disables it otherwise.
+func (c *Client) Single(single bool) error {
+	if single {
+		return c.okCmd("single 1")
+	}
+	return c.okCmd("single 0")
+}
+
+// Consume enables consume mode, if consume is true, disables it otherwise.
+func (c *Client) Consume(consume bool) error {
+	if consume {
+		return c.okCmd("consume 1")
+	}
+	return c.okCmd("consume 0")
+}
+
 //
 // Playlist related functions
 //
