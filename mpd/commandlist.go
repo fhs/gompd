@@ -171,6 +171,24 @@ func (cl *CommandList) Repeat(repeat bool) {
 	}
 }
 
+// Single enables single song mode, if single is true, disables it otherwise.
+func (cl *CommandList) Single(single bool) {
+	if single {
+		cl.cmdQ.PushBack(&command{"single 1", nil, cmdNoReturn})
+	} else {
+		cl.cmdQ.PushBack(&command{"single 0", nil, cmdNoReturn})
+	}
+}
+
+// Consume enables consume mode, if consume is true, disables it otherwise.
+func (cl *CommandList) Consume(consume bool) {
+	if consume {
+		cl.cmdQ.PushBack(&command{"consume 1", nil, cmdNoReturn})
+	} else {
+		cl.cmdQ.PushBack(&command{"consume 0", nil, cmdNoReturn})
+	}
+}
+
 //
 // Playlist related functions
 //
