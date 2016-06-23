@@ -32,6 +32,16 @@ func quote(s string) string {
 	return string(q[:i])
 }
 
+// Quote quotes each string of args in the format understood by MPD.
+// See: http://git.musicpd.org/cgit/master/mpd.git/tree/src/util/Tokenizer.cxx
+func quoteArgs(args []string) string {
+	quoted := make([]string, len(args))
+	for index, arg := range args {
+		quoted[index] = quote(arg)
+	}
+	return strings.Join(quoted, " ")
+}
+
 // Client represents a client connection to a MPD server.
 type Client struct {
 	text *textproto.Conn
@@ -566,8 +576,8 @@ func (c *Client) ListInfo(uri string) ([]Attrs, error) {
 // Find returns attributes for songs in the library. You can find songs that
 // belong to an artist and belong to the album by searching:
 // `find artist "<Artist>" album "<Album>"`
-func (c *Client) Find(uri string) ([]Attrs, error) {
-	id, err := c.cmd("find " + quote(uri))
+func (c *Client) Find(uri []string) ([]Attrs, error) {
+	id, err := c.cmd("find " + quoteArgs(uri))
 	if err != nil {
 		return nil, err
 	}
@@ -580,8 +590,8 @@ func (c *Client) Find(uri string) ([]Attrs, error) {
 // List searches the database for your query. You can use something simple like
 // `artist` for your search, or something like `artist album <Album Name>` if
 // you want the artist that has an album with a specified album name.
-func (c *Client) List(uri string) ([]string, error) {
-	id, err := c.cmd("list " + quote(uri))
+func (c *Client) List(uri []string) ([]string, error) {
+	id, err := c.cmd("list " + quoteArgs(uri))
 	if err != nil {
 		return nil, err
 	}
