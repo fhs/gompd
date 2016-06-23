@@ -576,8 +576,8 @@ func (c *Client) ListInfo(uri string) ([]Attrs, error) {
 // Find returns attributes for songs in the library. You can find songs that
 // belong to an artist and belong to the album by searching:
 // `find artist "<Artist>" album "<Album>"`
-func (c *Client) Find(uri []string) ([]Attrs, error) {
-	id, err := c.cmd("find " + quoteArgs(uri))
+func (c *Client) Find(typ, what string, args ...string) ([]Attrs, error) {
+	id, err := c.cmd("find " + quote(typ) + " " + quote(what) + " " + quoteArgs(args))
 	if err != nil {
 		return nil, err
 	}
@@ -590,8 +590,8 @@ func (c *Client) Find(uri []string) ([]Attrs, error) {
 // List searches the database for your query. You can use something simple like
 // `artist` for your search, or something like `artist album <Album Name>` if
 // you want the artist that has an album with a specified album name.
-func (c *Client) List(uri []string) ([]string, error) {
-	id, err := c.cmd("list " + quoteArgs(uri))
+func (c *Client) List(typ ...string) ([]string, error) {
+	id, err := c.cmd("list " + quoteArgs(typ))
 	if err != nil {
 		return nil, err
 	}
