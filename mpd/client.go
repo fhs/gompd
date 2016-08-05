@@ -419,8 +419,9 @@ func (c *Client) AddID(uri string, pos int) (int, error) {
 	var err error
 	if pos >= 0 {
 		id, err = c.cmd("addid %s %d", quote(uri), pos)
+	} else {
+		id, err = c.cmd("addid %s", quote(uri))
 	}
-	id, err = c.cmd("addid %s", quote(uri))
 	if err != nil {
 		return -1, err
 	}
