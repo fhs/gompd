@@ -261,6 +261,7 @@ func (cl *CommandList) Clear() {
 func (cl *CommandList) Shuffle(start, end int) {
 	if start < 0 || end < 0 {
 		cl.cmdQ.PushBack(&command{"shuffle", nil, cmdNoReturn})
+		return
 	}
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("shuffle %d:%d", start, end), nil, cmdNoReturn})
 }
