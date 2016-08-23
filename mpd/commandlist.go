@@ -261,8 +261,9 @@ func (cl *CommandList) Clear() {
 func (cl *CommandList) Shuffle(start, end int) {
 	if start < 0 || end < 0 {
 		cl.cmdQ.PushBack(&command{"shuffle", nil, cmdNoReturn})
+		return
 	}
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("shuffe %d:%d", start, end), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("shuffle %d:%d", start, end), nil, cmdNoReturn})
 }
 
 // Update updates MPD's database: find new files, remove deleted files, update
