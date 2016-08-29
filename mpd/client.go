@@ -564,11 +564,29 @@ func (c *Client) ListInfo(uri string) ([]Attrs, error) {
 	return attrs, nil
 }
 
-// Find returns attributes for songs in the library. You can find songs that
-// belong to an artist and belong to the album by searching:
-// `find artist "<Artist>" album "<Album>"`
+// Find - syntax: {TYPE} {WHAT}
+// Case sensitive. Finds songs in the db that are exactly WHAT. 
+// TYPE can be any tag supported by MPD, or one of the special parameters.
+// Full docs: http://www.musicpd.org/doc/protocol/database.html
+// Example Find(artist "/"David Bowie/"")
+// Note: Quote function bypassed due to query format incompatibility.
 func (c *Client) Find(uri string) ([]Attrs, error) {
-	id, err := c.cmd("find " + quote(uri))
+	id, err := c.cmd("find " + uri)
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	return c.readAttrsList("file")
+}
+
+// Searches for any song that contains WHAT. 
+// Parameters have the same meaning as for Find(), except that search is not case sensitive.
+// Full docs: http://www.musicpd.org/doc/protocol/database.html
+// Example Search(artist "/"Bowie/"")
+func (c *Client) Search(uri string) ([]Attrs, error) {
+	id, err := c.cmd("search " + uri)
 	if err != nil {
 		return nil, err
 	}
