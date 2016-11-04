@@ -172,6 +172,19 @@ func TestCurrentSong(t *testing.T) {
 	}
 }
 
+func TestReadComments(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	attrs, err := cli.ReadComments("foo.mp3")
+	if err != nil {
+		t.Fatalf(`Client.ReadComments("foo.mp3") = %v, %s need _, nil`, attrs, err)
+	}
+	if _, ok := attrs["TITLE"]; !ok {
+		t.Fatalf("comments (attrs=%v) has no ARTIST attribute", attrs)
+	}
+}
+
 func TestPing(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)

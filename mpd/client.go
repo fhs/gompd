@@ -574,6 +574,18 @@ func (c *Client) ListInfo(uri string) ([]Attrs, error) {
 	return attrs, nil
 }
 
+// ReadComments reads "comments" (audio metadata) from the song URI using
+// MPD's readcomments command.
+func (c *Client) ReadComments(uri string) (Attrs, error) {
+	id, err := c.cmd("readcomments %s", quote(uri))
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	return c.readAttrs("OK")
+}
+
 // Find returns attributes for songs in the library. You can find songs that
 // belong to an artist and belong to the album by searching:
 // `find artist "<Artist>" album "<Album>"`

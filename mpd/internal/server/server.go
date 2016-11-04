@@ -169,6 +169,15 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			p.PrintfLine("directory: %s", a)
 		}
 		p.PrintfLine("playlist: BBC 6 Music.m3u")
+	case "readcomments":
+		if len(args) < 2 {
+			ack("too few arguments")
+			return
+		}
+
+		p.PrintfLine("TITLE: Jam On It")
+		p.PrintfLine("ARTIST: Newcleus")
+		p.PrintfLine("ALBUM: Jam on Revenge")
 	case "listplaylists":
 		for k := range s.playlists {
 			p.PrintfLine("playlist: %s", k)
