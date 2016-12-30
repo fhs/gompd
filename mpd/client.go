@@ -301,6 +301,11 @@ func (c *Client) SeekID(id, time int) error {
 	return c.okCmd("seekid %d %d", id, time)
 }
 
+//Seeks to the position TIME (in seconds; fractions allowed) within the current song.
+func (c *Client) SeekCur(time int) error {
+	return c.okCmd("seekcur %d", time)
+}
+
 // Stop stops playback.
 func (c *Client) Stop() error {
 	return c.okCmd("stop")
