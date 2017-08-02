@@ -390,10 +390,5 @@ func (cl *CommandList) End() error {
 	}
 
 	// Finalize the command list with the last OK:
-	if cerr := cl.client.readOKLine("OK"); cerr != nil {
-		return cerr
-	}
-
-	return nil
-
+	return cl.client.readOKLine("OK")
 }
