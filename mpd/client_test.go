@@ -156,6 +156,70 @@ func TestListInfo(t *testing.T) {
 	}
 }
 
+func TestStickerFind(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	attrs, err := cli.StickerFind("", "rating")
+	if err != nil {
+		t.Fatalf(`Client.StickerFind("", "rating") = %v, %s need _, nil`, attrs, err)
+	}
+	if len(attrs) != 1 {
+		t.Fatalf(`Client.StickerFind("", "rating") = %v need 1`, len(attrs))
+	}
+	if _, ok := attrs[0]["file"]; !ok {
+		t.Fatalf(`Client.StickerFind("", "rating") (attrs[0]=%v) no file attribute`, attrs[0])
+	}
+	if _, ok := attrs[0]["sticker"]; !ok {
+		t.Fatalf(`Client.StickerFind("", "rating") (attrs[0]=%v) no sticker attribute`, attrs[0])
+	}
+}
+
+func TestStickerGet(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	attrs, err := cli.StickerGet("foo.mp3", "rating")
+	if err != nil {
+		t.Fatalf(`Client.StickerGet("foo.mp3", "rating") = %v, %s need _, nil`, attrs, err)
+	}
+	if _, ok := attrs["sticker"]; !ok {
+		t.Fatalf(`Client.StickerGet("foo.mp3", "rating") (attrs=%v) no sticker attribute`, attrs)
+	}
+	if attrs["sticker"] != "rating=superb" {
+		t.Fatalf(`Client.StickerGet("foo.mp3", "rating") = %s need rating=superb`, attrs["sticker"])
+	}
+}
+
+func TestStickerSet(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	err := cli.StickerSet("foo.mp3", "rating", "superb")
+	if err != nil {
+		t.Fatalf(`Client.StickerSet("foo.mp3", "rating", "superb") = %v need nil`, err)
+	}
+}
+
+func TestStickerList(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	attrs, err := cli.StickerList("foo.mp3")
+	if err != nil {
+		t.Fatalf(`Client.StickerList("foo.mp3") = %v, %s need _, nil`, attrs, err)
+	}
+	if len(attrs) != 2 {
+		t.Fatalf(`Client.StickerList("foo.mp3") = %v need 2`, len(attrs))
+	}
+	if _, ok := attrs[0]["sticker"]; !ok {
+		t.Fatalf(`Client.StickerList("foo.mp3") (attrs[0]=%v) no sticker attribute`, attrs[0])
+	}
+	if _, ok := attrs[1]["sticker"]; !ok {
+		t.Fatalf(`Client.StickerGet("foo.mp3") (attrs[1]=%v) no sticker attribute`, attrs[1])
+	}
+}
+
 func TestCurrentSong(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)

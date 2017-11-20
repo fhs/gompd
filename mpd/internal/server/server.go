@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/textproto"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -411,6 +412,70 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 		p.PrintfLine("outputenabled: 0")
 		p.PrintfLine("outputname: upstairs")
 	case "disableoutput", "enableoutput":
+	case "sticker":
+		if len(args) < 4 {
+			ack("too few arguments")
+			return
+		}
+		switch args[1] {
+		case "get":
+			if len(args) < 5 {
+				ack("bad request")
+				return
+			}
+			uri := args[3]
+			name := args[4]
+
+			if uri == "foo.mp3" && name == "rating" {
+				p.PrintfLine("sticker: %s=superb", name)
+				break
+			}
+
+			songFound, _ := regexp.MatchString("song[0-9]+.ogg", uri)
+			if songFound {
+				ack("no suck sticker") // ACK [50@0] {sticker} no such sticker
+				return
+			} else {
+				ack("Not found") // ACK [50@0] {sticker} Not found
+				return
+			}
+		case "set":
+			if len(args) < 6 {
+				ack("bad request")
+				return
+			}
+			uri := args[3]
+			songFound, _ := regexp.MatchString("song[0-9]+.ogg", uri)
+
+			if !(uri == "foo.mp3" || songFound) {
+				ack("Not found") // ACK [50@0] {sticker} Not found
+				return
+			}
+		case "list":
+			uri := args[3]
+
+			if uri == "foo.mp3" {
+				p.PrintfLine("sticker: rating=superb")
+				p.PrintfLine("sticker: num_rating=10")
+				break
+			}
+
+			songFound, _ := regexp.MatchString("song[0-9]+.ogg", uri)
+			if !songFound {
+				ack("Not found") // ACK [50@0] {sticker} Not found
+				return
+			}
+		case "find":
+			name := args[4]
+
+			if name == "rating" {
+				p.PrintfLine("file: foo.mp3")
+				p.PrintfLine("sticker: rating=superb")
+			} else if name == "num_rating" {
+				p.PrintfLine("file: foo.mp3")
+				p.PrintfLine("sticker: num_rating=10")
+			}
+		}
 	default:
 		p.PrintfLine("ACK {} unknown command %q", args[0])
 		log.Printf("unknown command: %s\n", args[0])
