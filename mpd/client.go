@@ -726,12 +726,12 @@ func (c *Client) PlaylistSave(name string) error {
 }
 
 // StickerSet applies a sticker to a song
-func (c *Client) StickerSet(song string, stickerName string, value string) error {
+func (c *Client) StickerSongSet(song string, stickerName string, value string) error {
 	return c.okCmd("sticker set song %s %s %s", quote(song), quote(stickerName), quote(value))
 }
 
-// StickerGet fetches a sticker value for a song
-func (c *Client) StickerGet(song string, stickerName string) (string, error) {
+// StickerGet fetches a sticker value for a song.
+func (c *Client) StickerSongGet(song string, stickerName string) (string, error) {
 	id, err := c.cmd("sticker get song %s %s", quote(song), quote(stickerName))
 	if err != nil {
 		return "", err
@@ -747,7 +747,7 @@ func (c *Client) StickerGet(song string, stickerName string) (string, error) {
 		return "", errors.New("No stickers in response")
 	}
 	if len(list) > 1 {
-		return "", errors.New("Multiple stickers in response: " + fmt.Sprintf("%+v", list))
+		return "", fmt.Errorf("Multiple stickers in response: %+v", list)
 	}
 	parts := strings.Split(list[0], "=")
 	if parts[0] == stickerName {

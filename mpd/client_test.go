@@ -414,13 +414,13 @@ func TestStickers(t *testing.T) {
 		{"mpd client sticker test 1", "mpd client sticker value 1"},
 		{"mpd client sticker test 2", "mpd client sticker value 2"},
 	} {
-		err = cli.StickerSet(fileName, sticker.name, sticker.value)
+		err = cli.StickerSongSet(fileName, sticker.name, sticker.value)
 		if err != nil {
 			t.Errorf("Client.StickerSet failed: '%s'\n", err)
 			return
 		}
 		time.Sleep(time.Second)
-		actualValue, err := cli.StickerGet(fileName, sticker.name)
+		actualValue, err := cli.StickerSongGet(fileName, sticker.name)
 		if err != nil {
 			t.Errorf("Client.StickerGet failed: '%s'\n", err)
 			return
