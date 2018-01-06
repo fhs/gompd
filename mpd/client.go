@@ -271,7 +271,7 @@ func (c *Client) Pause(pause bool) error {
 // start playing at the current position in the playlist.
 func (c *Client) Play(pos int) error {
 	if pos < 0 {
-		c.okCmd("play")
+		return c.okCmd("play")
 	}
 	return c.okCmd("play %d", pos)
 }
