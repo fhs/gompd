@@ -99,11 +99,16 @@ func (p *playlist) Append(q *playlist) {
 	}
 }
 
+type stickerKey string
+type stickerValue string
+type stickers map[stickerKey]stickerValue
+
 type server struct {
 	state           string
 	database        []Attrs        // database of songs
 	index           map[string]int // maps URI to database index
 	playlists       map[string]*playlist
+	stickers        map[string]stickers
 	currentPlaylist *playlist
 	pos             int // in currentPlaylist
 	idleEventc      chan string
@@ -117,6 +122,7 @@ func newServer() *server {
 		database:        make([]Attrs, 100),
 		index:           make(map[string]int, 100),
 		playlists:       make(map[string]*playlist),
+		stickers:        make(map[string]stickers),
 		currentPlaylist: newPlaylist(),
 		pos:             0,
 		idleEventc:      make(chan string),
@@ -411,6 +417,33 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 		p.PrintfLine("outputenabled: 0")
 		p.PrintfLine("outputname: upstairs")
 	case "disableoutput", "enableoutput":
+	case "sticker":
+		if len(args) < 5 {
+			ack("wrong number of arguments")
+			return
+		}
+		file := args[3]
+		key := stickerKey(args[4])
+
+		sm, ok := s.stickers[file]
+		if !ok {
+			sm = make(stickers)
+			s.stickers[file] = sm
+		}
+		if args[1] == "get" {
+			value, ok := sm[key]
+			if !ok {
+				ack("{sticker} no such sticker")
+			} else {
+				p.PrintfLine("sticker: %s=%s", key, value)
+			}
+		} else if args[1] == "set" {
+			val := stickerValue(args[5])
+			sm[key] = val
+		} else {
+			ack("Unknown sticker command " + args[1])
+			return
+		}
 	default:
 		p.PrintfLine("ACK {} unknown command %q", args[0])
 		log.Printf("unknown command: %s\n", args[0])
@@ -577,6 +610,7 @@ var knownSubsystems = []string{
 	"mixer",
 	"output",
 	"options",
+	"sticker",
 }
 
 func indexID(v []uint, id uint) int {
