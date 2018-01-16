@@ -39,14 +39,14 @@ func loadTestFiles(t *testing.T, cli *Client, n int) (ok bool) {
 }
 
 func TestWatcher(t *testing.T) {
-	w := localWatch(t, "player")
-	defer w.Close()
-
 	c := localDial(t)
 	defer teardown(c, t)
 	if !loadTestFiles(t, c, 10) {
 		return
 	}
+
+	w := localWatch(t, "player")
+	defer w.Close()
 
 	// Give the watcher a chance.
 	<-time.After(time.Second)
@@ -71,6 +71,8 @@ func TestWatcher(t *testing.T) {
 	}
 
 	w.Subsystems("options", "playlist")
+	<-time.After(time.Second) // Give the watcher a chance.
+
 	if err := c.Stop(); err != nil { // player change
 		t.Fatalf("Client.Stop failed: %s\n", err)
 	}
