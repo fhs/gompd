@@ -724,3 +724,49 @@ func (c *Client) PlaylistRemove(name string) error {
 func (c *Client) PlaylistSave(name string) error {
 	return c.okCmd("save %s", quote(name))
 }
+
+// Deletes sticker for the song with given uri
+func (c *Client) StickerDelete(uri string, name string) error {
+	return c.okCmd("sticker delete song %s %s", uri, name)
+}
+
+// Finds songs inside directory with uri, which have a sticker with given name
+func (c *Client) StickerFind(uri string, name string) ([]Attrs, error) {
+	id, err := c.cmd("sticker find song %s %s", quote(uri), name)
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	return c.readAttrsList("file")
+}
+
+// Gets sticker value for the song with given uri
+func (c *Client) StickerGet(uri string, name string) (Attrs, error) {
+	id, err := c.cmd("sticker get song %s %s", quote(uri), name)
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	return c.readAttrs("OK")
+}
+
+// Returns List of sticker name=value pairs for the song with given uri
+func (c *Client) StickerList(uri string) ([]Attrs, error) {
+	id, err := c.cmd("sticker list song %s", quote(uri))
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	return c.readAttrsList("sticker")
+}
+
+// Sets sticker value for the song with given uri
+func (c *Client) StickerSet(uri string, name string, value string) error {
+	return c.okCmd("sticker set song %s %s %s", quote(uri), name, value)
+}
