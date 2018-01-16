@@ -725,25 +725,65 @@ func (c *Client) PlaylistSave(name string) error {
 	return c.okCmd("save %s", quote(name))
 }
 
-// Deletes sticker for the song with given uri
+type Sticker struct {
+	Name, Value string
+}
+
+func newSticker(name, value string) *Sticker {
+	return &Sticker{
+		Name:  name,
+		Value: value,
+	}
+}
+
+func parseSticker(s string) (*Sticker, error) {
+	i := strings.LastIndex(s, "=")
+	if i < 0 {
+		return nil, textproto.ProtocolError("parsing sticker failed")
+	}
+	return newSticker(s[:i], s[i+1:]), nil
+}
+
+// StickerDelete deletes sticker for the song with given URI.
 func (c *Client) StickerDelete(uri string, name string) error {
 	return c.okCmd("sticker delete song %s %s", uri, name)
 }
 
-// Finds songs inside directory with uri, which have a sticker with given name
-func (c *Client) StickerFind(uri string, name string) ([]Attrs, error) {
+// StickerFind finds songs inside directory with URI which have a sticker with given name.
+// It returns a slice of URIs of matching songs and a slice of corresponding stickers.
+func (c *Client) StickerFind(uri string, name string) ([]string, []Sticker, error) {
 	id, err := c.cmd("sticker find song %s %s", quote(uri), name)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
 
-	return c.readAttrsList("file")
+	attrs, err := c.readAttrsList("file")
+	if err != nil {
+		return nil, nil, err
+	}
+	files := make([]string, len(attrs))
+	stks := make([]Sticker, len(attrs))
+	for i, attr := range attrs {
+		if _, ok := attr["file"]; !ok {
+			return nil, nil, textproto.ProtocolError("file attribute not found")
+		}
+		if _, ok := attr["sticker"]; !ok {
+			return nil, nil, textproto.ProtocolError("sticker attribute not found")
+		}
+		files[i] = attr["file"]
+		stk, err := parseSticker(attr["sticker"])
+		if err != nil {
+			return nil, nil, err
+		}
+		stks[i] = *stk
+	}
+	return files, stks, nil
 }
 
-// Gets sticker value for the song with given uri
-func (c *Client) StickerGet(uri string, name string) (Attrs, error) {
+// StickerGet gets sticker value for the song with given URI.
+func (c *Client) StickerGet(uri string, name string) (*Sticker, error) {
 	id, err := c.cmd("sticker get song %s %s", quote(uri), name)
 	if err != nil {
 		return nil, err
@@ -751,11 +791,23 @@ func (c *Client) StickerGet(uri string, name string) (Attrs, error) {
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
 
-	return c.readAttrs("OK")
+	attrs, err := c.readAttrs("OK")
+	if err != nil {
+		return nil, err
+	}
+	attr, ok := attrs["sticker"]
+	if !ok {
+		return nil, textproto.ProtocolError("sticker not found")
+	}
+	stk, err := parseSticker(attr)
+	if stk == nil {
+		return nil, err
+	}
+	return stk, nil
 }
 
-// Returns List of sticker name=value pairs for the song with given uri
-func (c *Client) StickerList(uri string) ([]Attrs, error) {
+// StickerList returns a slice of stickers for the song with given URI.
+func (c *Client) StickerList(uri string) ([]Sticker, error) {
 	id, err := c.cmd("sticker list song %s", quote(uri))
 	if err != nil {
 		return nil, err
@@ -763,10 +815,26 @@ func (c *Client) StickerList(uri string) ([]Attrs, error) {
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
 
-	return c.readAttrsList("sticker")
+	attrs, err := c.readAttrsList("sticker")
+	if err != nil {
+		return nil, err
+	}
+	stks := make([]Sticker, len(attrs))
+	for i, attr := range attrs {
+		s, ok := attr["sticker"]
+		if !ok {
+			return nil, textproto.ProtocolError("sticker attribute not found")
+		}
+		stk, err := parseSticker(s)
+		if err != nil {
+			return nil, err
+		}
+		stks[i] = *stk
+	}
+	return stks, nil
 }
 
-// Sets sticker value for the song with given uri
+// StickerSet sets sticker value for the song with given URI.
 func (c *Client) StickerSet(uri string, name string, value string) error {
 	return c.okCmd("sticker set song %s %s %s", quote(uri), name, value)
 }

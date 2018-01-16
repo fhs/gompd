@@ -12,7 +12,7 @@ import (
 	"net"
 	"net/textproto"
 	"os"
-	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -100,12 +100,61 @@ func (p *playlist) Append(q *playlist) {
 	}
 }
 
+type Sticker struct {
+	Name, Value string
+}
+
+func NewSticker(name, value string) *Sticker {
+	return &Sticker{
+		Name:  name,
+		Value: value,
+	}
+}
+
+func (s *Sticker) String() string {
+	return s.Name + "=" + s.Value
+}
+
+type Stickers map[string]*Sticker
+
+func NewStickers() Stickers {
+	return make(Stickers, 0)
+}
+
+func (ss Stickers) Set(name, value string) {
+	if _, ok := ss[name]; !ok {
+		ss[name] = NewSticker(name, value)
+		return
+	}
+	ss[name].Value = value
+}
+
+func (ss Stickers) Get(name string) *Sticker {
+	return ss[name]
+}
+
+func (ss Stickers) Delete(name string) {
+	delete(ss, name)
+}
+
+func (ss Stickers) Sorted() []*Sticker {
+	var v []*Sticker
+	for _, s := range ss {
+		v = append(v, s)
+	}
+	sort.Slice(v, func(i, j int) bool {
+		return v[i].Name < v[j].Name
+	})
+	return v
+}
+
 type server struct {
 	state           string
 	database        []Attrs        // database of songs
 	index           map[string]int // maps URI to database index
 	playlists       map[string]*playlist
 	currentPlaylist *playlist
+	songStickers    map[string]Stickers
 	pos             int // in currentPlaylist
 	idleEventc      chan string
 	idleStartc      chan *idleRequest
@@ -117,6 +166,7 @@ func newServer() *server {
 		state:           "stop",
 		database:        make([]Attrs, 100),
 		index:           make(map[string]int, 100),
+		songStickers:    make(map[string]Stickers, 100),
 		playlists:       make(map[string]*playlist),
 		currentPlaylist: newPlaylist(),
 		pos:             0,
@@ -129,6 +179,7 @@ func newServer() *server {
 		filename := fmt.Sprintf("song%04d.ogg", i)
 		s.database[i]["file"] = filename
 		s.index[filename] = i
+		s.songStickers[filename] = NewStickers()
 	}
 	return s
 }
@@ -417,63 +468,82 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			ack("too few arguments")
 			return
 		}
+		if args[2] != "song" {
+			ack("Invalid object type %q", args[2])
+			return
+		}
+		uri := args[3]
+
 		switch args[1] {
 		case "get":
 			if len(args) < 5 {
 				ack("bad request")
 				return
 			}
-			uri := args[3]
 			name := args[4]
-
-			if uri == "foo.mp3" && name == "rating" {
-				p.PrintfLine("sticker: %s=superb", name)
-				break
-			}
-
-			songFound, _ := regexp.MatchString("song[0-9]+.ogg", uri)
-			if songFound {
-				ack("no suck sticker") // ACK [50@0] {sticker} no such sticker
-				return
-			} else {
-				ack("Not found") // ACK [50@0] {sticker} Not found
+			v, ok := s.songStickers[uri]
+			if !ok {
+				ack("No such song %q", uri)
 				return
 			}
+			stk := v.Get(name)
+			if stk == nil {
+				ack("no such sticker %q", name)
+				return
+			}
+			p.PrintfLine("sticker: %s", stk)
+
 		case "set":
 			if len(args) < 6 {
 				ack("bad request")
 				return
 			}
-			uri := args[3]
-			songFound, _ := regexp.MatchString("song[0-9]+.ogg", uri)
-
-			if !(uri == "foo.mp3" || songFound) {
-				ack("Not found") // ACK [50@0] {sticker} Not found
+			v, ok := s.songStickers[uri]
+			if !ok {
+				ack("No such song %q", uri)
 				return
 			}
+			v.Set(args[4], args[5])
+
+		case "delete":
+			if len(args) < 5 {
+				ack("bad request")
+				return
+			}
+			name := args[4]
+			v, ok := s.songStickers[uri]
+			if !ok {
+				ack("No such song %q", uri)
+				return
+			}
+			if stk := v.Get(name); stk == nil {
+				ack("No such sticker %q", name)
+				return
+			}
+			v.Delete(name)
+
 		case "list":
-			uri := args[3]
-
-			if uri == "foo.mp3" {
-				p.PrintfLine("sticker: rating=superb")
-				p.PrintfLine("sticker: num_rating=10")
-				break
-			}
-
-			songFound, _ := regexp.MatchString("song[0-9]+.ogg", uri)
-			if !songFound {
-				ack("Not found") // ACK [50@0] {sticker} Not found
+			v, ok := s.songStickers[uri]
+			if !ok {
+				ack("No such song %q", uri)
 				return
 			}
+			for _, stk := range v.Sorted() {
+				p.PrintfLine("sticker: %s", stk)
+			}
+
 		case "find":
+			if len(args) < 5 {
+				ack("bad request")
+				return
+			}
 			name := args[4]
 
-			if name == "rating" {
-				p.PrintfLine("file: foo.mp3")
-				p.PrintfLine("sticker: rating=superb")
-			} else if name == "num_rating" {
-				p.PrintfLine("file: foo.mp3")
-				p.PrintfLine("sticker: num_rating=10")
+			for file, v := range s.songStickers {
+				if stk := v.Get(name); stk != nil {
+					p.PrintfLine("file: %s", file)
+					p.PrintfLine("sticker: %s", stk)
+				}
 			}
 		}
 	default:

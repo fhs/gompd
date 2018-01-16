@@ -156,68 +156,72 @@ func TestListInfo(t *testing.T) {
 	}
 }
 
-func TestStickerFind(t *testing.T) {
+func TestSticker(t *testing.T) {
+	testCases := []struct {
+		Song, Name, Value string
+	}{
+		{"song0000.ogg", "rating", "superb"},
+		{"song0000.ogg", "num_rating", "10"},
+	}
+
 	cli := localDial(t)
 	defer teardown(cli, t)
 
-	attrs, err := cli.StickerFind("", "rating")
-	if err != nil {
-		t.Fatalf(`Client.StickerFind("", "rating") = %v, %s need _, nil`, attrs, err)
-	}
-	if len(attrs) != 1 {
-		t.Fatalf(`Client.StickerFind("", "rating") = %v need 1`, len(attrs))
-	}
-	if _, ok := attrs[0]["file"]; !ok {
-		t.Fatalf(`Client.StickerFind("", "rating") (attrs[0]=%v) no file attribute`, attrs[0])
-	}
-	if _, ok := attrs[0]["sticker"]; !ok {
-		t.Fatalf(`Client.StickerFind("", "rating") (attrs[0]=%v) no sticker attribute`, attrs[0])
-	}
-}
-
-func TestStickerGet(t *testing.T) {
-	cli := localDial(t)
-	defer teardown(cli, t)
-
-	attrs, err := cli.StickerGet("foo.mp3", "rating")
-	if err != nil {
-		t.Fatalf(`Client.StickerGet("foo.mp3", "rating") = %v, %s need _, nil`, attrs, err)
-	}
-	if _, ok := attrs["sticker"]; !ok {
-		t.Fatalf(`Client.StickerGet("foo.mp3", "rating") (attrs=%v) no sticker attribute`, attrs)
-	}
-	if attrs["sticker"] != "rating=superb" {
-		t.Fatalf(`Client.StickerGet("foo.mp3", "rating") = %s need rating=superb`, attrs["sticker"])
-	}
-}
-
-func TestStickerSet(t *testing.T) {
-	cli := localDial(t)
-	defer teardown(cli, t)
-
-	err := cli.StickerSet("foo.mp3", "rating", "superb")
-	if err != nil {
-		t.Fatalf(`Client.StickerSet("foo.mp3", "rating", "superb") = %v need nil`, err)
-	}
-}
-
-func TestStickerList(t *testing.T) {
-	cli := localDial(t)
-	defer teardown(cli, t)
-
-	attrs, err := cli.StickerList("foo.mp3")
-	if err != nil {
-		t.Fatalf(`Client.StickerList("foo.mp3") = %v, %s need _, nil`, attrs, err)
-	}
-	if len(attrs) != 2 {
-		t.Fatalf(`Client.StickerList("foo.mp3") = %v need 2`, len(attrs))
-	}
-	if _, ok := attrs[0]["sticker"]; !ok {
-		t.Fatalf(`Client.StickerList("foo.mp3") (attrs[0]=%v) no sticker attribute`, attrs[0])
-	}
-	if _, ok := attrs[1]["sticker"]; !ok {
-		t.Fatalf(`Client.StickerGet("foo.mp3") (attrs[1]=%v) no sticker attribute`, attrs[1])
-	}
+	t.Run("Set", func(t *testing.T) {
+		for _, tc := range testCases {
+			if err := cli.StickerSet(tc.Song, tc.Name, tc.Value); err != nil {
+				t.Fatalf("Client.StickerSet of %v failed: %v", tc, err)
+			}
+		}
+	})
+	t.Run("Get", func(t *testing.T) {
+		for _, tc := range testCases {
+			s, err := cli.StickerGet(tc.Song, tc.Name)
+			if err != nil {
+				t.Fatalf("Client.StickerGet of %v failed: %v", tc, err)
+			}
+			if s.Value != tc.Value {
+				t.Errorf("Client.StickerGet of %v is %v; want %v", tc, s.Value, tc.Value)
+			}
+		}
+	})
+	t.Run("List", func(t *testing.T) {
+		stks, err := cli.StickerList(testCases[0].Song)
+		if err != nil {
+			t.Fatalf("Client.StickerList failed: %v", err)
+		}
+		if len(stks) != len(testCases) {
+			t.Errorf("Client.StickerList returned %v stickers; want %v", len(stks), len(testCases))
+		}
+	})
+	t.Run("Find", func(t *testing.T) {
+		for _, tc := range testCases {
+			files, stks, err := cli.StickerFind("", tc.Name)
+			if err != nil {
+				t.Fatalf("Client.StickerFind(%q) failed: %v", tc.Name, err)
+			}
+			if len(files) != len(stks) {
+				t.Errorf("Client.StickerFind(%q) returned %v files and %v stickers", tc.Name, len(files), len(stks))
+			}
+			if len(files) != 1 {
+				t.Errorf("Client.StickerFind(%q) returned %v file; need 1", tc.Name, len(files))
+			}
+		}
+	})
+	t.Run("Delete", func(t *testing.T) {
+		for i, tc := range testCases {
+			if err := cli.StickerDelete(tc.Song, tc.Name); err != nil {
+				t.Fatalf("Client.StickerDelete of %v failed: %v", tc, err)
+			}
+			stks, err := cli.StickerList(testCases[0].Song)
+			if err != nil {
+				t.Fatalf("Client.StickerList failed: %v", err)
+			}
+			if len(stks) != len(testCases)-i-1 {
+				t.Fatalf("Client.StickerList returned %v stickers; want %v", len(stks), len(testCases)-i-1)
+			}
+		}
+	})
 }
 
 func TestCurrentSong(t *testing.T) {
