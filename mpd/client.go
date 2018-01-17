@@ -652,7 +652,7 @@ func newSticker(name, value string) *Sticker {
 }
 
 func parseSticker(s string) (*Sticker, error) {
-	i := strings.LastIndex(s, "=")
+	i := strings.Index(s, "=")
 	if i < 0 {
 		return nil, textproto.ProtocolError("parsing sticker failed")
 	}
