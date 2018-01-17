@@ -179,35 +179,17 @@ func (c *Client) readAttrs(terminator string) (attrs Attrs, err error) {
 
 // CurrentSong returns information about the current song in the playlist.
 func (c *Client) CurrentSong() (Attrs, error) {
-	id, err := c.cmd("currentsong")
-	if err != nil {
-		return nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return c.readAttrs("OK")
+	return c.Command("currentsong").Attrs()
 }
 
 // Status returns information about the current status of MPD.
 func (c *Client) Status() (Attrs, error) {
-	id, err := c.cmd("status")
-	if err != nil {
-		return nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return c.readAttrs("OK")
+	return c.Command("status").Attrs()
 }
 
 // Stats displays statistics (number of artists, songs, playtime, etc)
 func (c *Client) Stats() (Attrs, error) {
-	id, err := c.cmd("stats")
-	if err != nil {
-		return nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return c.readAttrs("OK")
+	return c.Command("stats").Attrs()
 }
 
 func (c *Client) readOKLine(terminator string) (err error) {
@@ -232,13 +214,7 @@ func (c *Client) okCmd(format string, args ...interface{}) error {
 }
 
 func (c *Client) idle(subsystems ...string) ([]string, error) {
-	id, err := c.cmd("idle %s", strings.Join(subsystems, " "))
-	if err != nil {
-		return nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return c.readList("changed")
+	return c.Command("idle %s", strings.Join(subsystems, " ")).Strings("changed")
 }
 
 func (c *Client) noIdle() (err error) {
@@ -353,32 +329,23 @@ func (c *Client) Consume(consume bool) error {
 // song at position start. If both start and end are positive, it does it
 // for positions in range [start, end).
 func (c *Client) PlaylistInfo(start, end int) ([]Attrs, error) {
-	var id uint
-	var err error
-
+	var cmd *Command
 	switch {
 	case start < 0 && end < 0:
 		// Request all playlist items.
-		id, err = c.cmd("playlistinfo")
+		cmd = c.Command("playlistinfo")
 	case start >= 0 && end >= 0:
 		// Request this range of playlist items.
-		id, err = c.cmd("playlistinfo %d:%d", start, end)
+		cmd = c.Command("playlistinfo %d:%d", start, end)
 	case start >= 0 && end < 0:
 		// Request the single playlist item at this position.
-		id, err = c.cmd("playlistinfo %d", start)
+		cmd = c.Command("playlistinfo %d", start)
 	case start < 0 && end >= 0:
 		return nil, errors.New("negative start index")
 	default:
 		panic("unreachable")
 	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return c.readAttrsList("file")
+	return cmd.AttrsList("file")
 }
 
 // Delete deletes songs from playlist. If both start and end are positive,
@@ -425,21 +392,13 @@ func (c *Client) Add(uri string) error {
 // id of the song added. If pos is positive, the song is added to position
 // pos.
 func (c *Client) AddID(uri string, pos int) (int, error) {
-	var id uint
-	var err error
+	var cmd *Command
 	if pos >= 0 {
-		id, err = c.cmd("addid %s %d", quote(uri), pos)
+		cmd = c.Command("addid %s %d", quote(uri), pos)
 	} else {
-		id, err = c.cmd("addid %s", quote(uri))
+		cmd = c.Command("addid %s", quote(uri))
 	}
-	if err != nil {
-		return -1, err
-	}
-
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-
-	attrs, err := c.readAttrs("OK")
+	attrs, err := cmd.Attrs()
 	if err != nil {
 		return -1, err
 	}
@@ -469,13 +428,7 @@ func (c *Client) Shuffle(start, end int) error {
 
 // GetFiles returns the entire list of files in MPD database.
 func (c *Client) GetFiles() ([]string, error) {
-	id, err := c.cmd("list file")
-	if err != nil {
-		return nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return c.readList("file")
+	return c.Command("list file").Strings("file")
 }
 
 // Update updates MPD's database: find new files, remove deleted files, update
@@ -577,27 +530,14 @@ func (c *Client) ListInfo(uri string) ([]Attrs, error) {
 // ReadComments reads "comments" (audio metadata) from the song URI using
 // MPD's readcomments command.
 func (c *Client) ReadComments(uri string) (Attrs, error) {
-	id, err := c.cmd("readcomments %s", quote(uri))
-	if err != nil {
-		return nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return c.readAttrs("OK")
+	return c.Command("readcomments %s", quote(uri)).Attrs()
 }
 
 // Find returns attributes for songs in the library. You can find songs that
 // belong to an artist and belong to the album by searching:
 // `find artist "<Artist>" album "<Album>"`
 func (c *Client) Find(args ...string) ([]Attrs, error) {
-	id, err := c.cmd("find " + quoteArgs(args))
-	if err != nil {
-		return nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-
-	return c.readAttrsList("file")
+	return c.Command("find " + quoteArgs(args)).AttrsList("file")
 }
 
 // List searches the database for your query. You can use something simple like
@@ -634,13 +574,7 @@ func (c *Client) List(args ...string) ([]string, error) {
 
 // ListOutputs lists all configured outputs with their name, id & enabled state.
 func (c *Client) ListOutputs() ([]Attrs, error) {
-	id, err := c.cmd("outputs")
-	if err != nil {
-		return nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return c.readAttrsList("outputid")
+	return c.Command("outputs").AttrsList("outputid")
 }
 
 // EnableOutput enables the audio output with the given id.
@@ -657,25 +591,13 @@ func (c *Client) DisableOutput(id int) error {
 
 // ListPlaylists lists all stored playlists.
 func (c *Client) ListPlaylists() ([]Attrs, error) {
-	id, err := c.cmd("listplaylists")
-	if err != nil {
-		return nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return c.readAttrsList("playlist")
+	return c.Command("listplaylists").AttrsList("playlist")
 }
 
 // PlaylistContents returns a list of attributes for songs in the specified
 // stored playlist.
 func (c *Client) PlaylistContents(name string) ([]Attrs, error) {
-	id, err := c.cmd("listplaylistinfo %s", quote(name))
-	if err != nil {
-		return nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return c.readAttrsList("file")
+	return c.Command("listplaylistinfo %s", quote(name)).AttrsList("file")
 }
 
 // PlaylistLoad loads the specfied playlist into the current queue.
@@ -755,14 +677,7 @@ func (c *Client) StickerDelete(uri string, name string) error {
 // StickerFind finds songs inside directory with URI which have a sticker with given name.
 // It returns a slice of URIs of matching songs and a slice of corresponding stickers.
 func (c *Client) StickerFind(uri string, name string) ([]string, []Sticker, error) {
-	id, err := c.cmd("sticker find song %s %s", quote(uri), name)
-	if err != nil {
-		return nil, nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-
-	attrs, err := c.readAttrsList("file")
+	attrs, err := c.Command("sticker find song %s %s", quote(uri), name).AttrsList("file")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -787,14 +702,7 @@ func (c *Client) StickerFind(uri string, name string) ([]string, []Sticker, erro
 
 // StickerGet gets sticker value for the song with given URI.
 func (c *Client) StickerGet(uri string, name string) (*Sticker, error) {
-	id, err := c.cmd("sticker get song %s %s", quote(uri), name)
-	if err != nil {
-		return nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-
-	attrs, err := c.readAttrs("OK")
+	attrs, err := c.Command("sticker get song %s %s", quote(uri), name).Attrs()
 	if err != nil {
 		return nil, err
 	}
@@ -811,14 +719,7 @@ func (c *Client) StickerGet(uri string, name string) (*Sticker, error) {
 
 // StickerList returns a slice of stickers for the song with given URI.
 func (c *Client) StickerList(uri string) ([]Sticker, error) {
-	id, err := c.cmd("sticker list song %s", quote(uri))
-	if err != nil {
-		return nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-
-	attrs, err := c.readAttrsList("sticker")
+	attrs, err := c.Command("sticker list song %s", quote(uri)).AttrsList("sticker")
 	if err != nil {
 		return nil, err
 	}
