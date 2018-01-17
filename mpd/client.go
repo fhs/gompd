@@ -80,7 +80,7 @@ func DialAuthenticated(network, addr, password string) (c *Client, err error) {
 
 // We are reimplemeting Cmd() and PrintfLine() from textproto here, because
 // the original functions append CR-LF to the end of commands. This behavior
-// voilates the MPD protocol: Commands must be terminated by '\n'.
+// violates the MPD protocol: Commands must be terminated by '\n'.
 func (c *Client) cmd(format string, args ...interface{}) (uint, error) {
 	id := c.text.Next()
 	c.text.StartRequest(id)
@@ -455,7 +455,7 @@ func (c *Client) Clear() error {
 	return c.okCmd("clear")
 }
 
-// Shuffle shuffles the tracks from postion start to position end in the
+// Shuffle shuffles the tracks from position start to position end in the
 // current playlist. If start or end is negative, the whole playlist is
 // shuffled.
 func (c *Client) Shuffle(start, end int) error {
@@ -725,6 +725,9 @@ func (c *Client) PlaylistSave(name string) error {
 	return c.okCmd("save %s", quote(name))
 }
 
+// A Sticker represents a name/value pair associated to a song. Stickers
+// are managed and shared by MPD clients, and MPD server does not assume
+// any special meaning in them.
 type Sticker struct {
 	Name, Value string
 }

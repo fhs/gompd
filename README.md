@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/fhs/gompd.png)](https://travis-ci.org/fhs/gompd)
 [![GoDoc](https://godoc.org/github.com/fhs/gompd/mpd?status.svg)](https://godoc.org/github.com/fhs/gompd/mpd)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fhs/gompd)](https://goreportcard.com/report/github.com/fhs/gompd)
 
 ## Overview
 
