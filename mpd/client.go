@@ -12,6 +12,7 @@ import (
 	"net/textproto"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Quote quotes strings in the format understood by MPD.
@@ -290,15 +291,24 @@ func (c *Client) Previous() error {
 	return c.okCmd("previous")
 }
 
-// Seek seeks to the position time (in seconds) of the song at playlist position pos.
-func (c *Client) Seek(pos, time int) error {
-	return c.okCmd("seek %d %d", pos, time)
+// Seek seeks to the position time of the song at playlist position pos.
+func (c *Client) Seek(pos int, time time.Duration) error {
+	return c.okCmd("seek %d %f", pos, time.Seconds())
 }
 
 // SeekID is identical to Seek except the song is identified by it's id
 // (not position in playlist).
-func (c *Client) SeekID(id, time int) error {
-	return c.okCmd("seekid %d %d", id, time)
+func (c *Client) SeekID(id int, time time.Duration) error {
+	return c.okCmd("seekid %d %f", id, time.Seconds())
+}
+
+//Seeks to the position time within the current song.
+//If relative is true, then the time is relative to the current playing position.
+func (c *Client) SeekCur(time time.Duration, relative bool) error {
+	if relative {
+		return c.okCmd("seekcur %+f", time.Seconds())
+	}
+	return c.okCmd("seekcur %f", time.Seconds())
 }
 
 // Stop stops playback.
