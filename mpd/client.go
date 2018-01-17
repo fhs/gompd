@@ -73,7 +73,7 @@ func Dial(network, addr string) (c *Client, err error) {
 func DialAuthenticated(network, addr, password string) (c *Client, err error) {
 	c, err = Dial(network, addr)
 	if err == nil && len(password) > 0 {
-		err = c.okCmd("password %s", password)
+		err = c.Command("password %s", password).OK()
 	}
 	return c, err
 }
@@ -109,7 +109,7 @@ func (c *Client) Close() (err error) {
 
 // Ping sends a no-op message to MPD. It's useful for keeping the connection alive.
 func (c *Client) Ping() error {
-	return c.okCmd("ping")
+	return c.Command("ping").OK()
 }
 
 func (c *Client) readList(key string) (list []string, err error) {
@@ -203,16 +203,6 @@ func (c *Client) readOKLine(terminator string) (err error) {
 	return textproto.ProtocolError("unexpected response: " + line)
 }
 
-func (c *Client) okCmd(format string, args ...interface{}) error {
-	id, err := c.cmd(format, args...)
-	if err != nil {
-		return err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return c.readOKLine("OK")
-}
-
 func (c *Client) idle(subsystems ...string) ([]string, error) {
 	return c.Command("idle %s", Quoted(strings.Join(subsystems, " "))).Strings("changed")
 }
@@ -232,91 +222,91 @@ func (c *Client) noIdle() (err error) {
 
 // Next plays next song in the playlist.
 func (c *Client) Next() error {
-	return c.okCmd("next")
+	return c.Command("next").OK()
 }
 
 // Pause pauses playback if pause is true; resumes playback otherwise.
 func (c *Client) Pause(pause bool) error {
 	if pause {
-		return c.okCmd("pause 1")
+		return c.Command("pause 1").OK()
 	}
-	return c.okCmd("pause 0")
+	return c.Command("pause 0").OK()
 }
 
 // Play starts playing the song at playlist position pos. If pos is negative,
 // start playing at the current position in the playlist.
 func (c *Client) Play(pos int) error {
 	if pos < 0 {
-		return c.okCmd("play")
+		return c.Command("play").OK()
 	}
-	return c.okCmd("play %d", pos)
+	return c.Command("play %d", pos).OK()
 }
 
 // PlayID plays the song identified by id. If id is negative, start playing
 // at the current position in playlist.
 func (c *Client) PlayID(id int) error {
 	if id < 0 {
-		return c.okCmd("playid")
+		return c.Command("playid").OK()
 	}
-	return c.okCmd("playid %d", id)
+	return c.Command("playid %d", id).OK()
 }
 
 // Previous plays previous song in the playlist.
 func (c *Client) Previous() error {
-	return c.okCmd("previous")
+	return c.Command("previous").OK()
 }
 
 // Seek seeks to the position time (in seconds) of the song at playlist position pos.
 func (c *Client) Seek(pos, time int) error {
-	return c.okCmd("seek %d %d", pos, time)
+	return c.Command("seek %d %d", pos, time).OK()
 }
 
 // SeekID is identical to Seek except the song is identified by it's id
 // (not position in playlist).
 func (c *Client) SeekID(id, time int) error {
-	return c.okCmd("seekid %d %d", id, time)
+	return c.Command("seekid %d %d", id, time).OK()
 }
 
 // Stop stops playback.
 func (c *Client) Stop() error {
-	return c.okCmd("stop")
+	return c.Command("stop").OK()
 }
 
 // SetVolume sets the volume to volume. The range of volume is 0-100.
 func (c *Client) SetVolume(volume int) error {
-	return c.okCmd("setvol %d", volume)
+	return c.Command("setvol %d", volume).OK()
 }
 
 // Random enables random playback, if random is true, disables it otherwise.
 func (c *Client) Random(random bool) error {
 	if random {
-		return c.okCmd("random 1")
+		return c.Command("random 1").OK()
 	}
-	return c.okCmd("random 0")
+	return c.Command("random 0").OK()
 }
 
 // Repeat enables repeat mode, if repeat is true, disables it otherwise.
 func (c *Client) Repeat(repeat bool) error {
 	if repeat {
-		return c.okCmd("repeat 1")
+		return c.Command("repeat 1").OK()
 	}
-	return c.okCmd("repeat 0")
+	return c.Command("repeat 0").OK()
 }
 
 // Single enables single song mode, if single is true, disables it otherwise.
 func (c *Client) Single(single bool) error {
 	if single {
-		return c.okCmd("single 1")
+		return c.Command("single 1").OK()
 	}
-	return c.okCmd("single 0")
+	return c.Command("single 0").OK()
 }
 
 // Consume enables consume mode, if consume is true, disables it otherwise.
 func (c *Client) Consume(consume bool) error {
 	if consume {
-		return c.okCmd("consume 1")
+		return c.Command("consume 1").OK()
 	}
-	return c.okCmd("consume 0")
+	return c.Command("consume 0").OK()
 }
 
 //
@@ -356,14 +346,14 @@ func (c *Client) Delete(start, end int) error {
 		return errors.New("negative start index")
 	}
 	if end < 0 {
-		return c.okCmd("delete %d", start)
+		return c.Command("delete %d", start).OK()
 	}
-	return c.okCmd("delete %d:%d", start, end)
+	return c.Command("delete %d:%d", start, end).OK()
 }
 
 // DeleteID deletes the song identified by id.
 func (c *Client) DeleteID(id int) error {
-	return c.okCmd("deleteid %d", id)
+	return c.Command("deleteid %d", id).OK()
 }
 
 // Move moves the songs between the positions start and end to the new position
@@ -373,19 +363,19 @@ func (c *Client) Move(start, end, position int) error {
 		return errors.New("negative start index")
 	}
 	if end < 0 {
-		return c.okCmd("move %d %d", start, position)
+		return c.Command("move %d %d", start, position).OK()
 	}
-	return c.okCmd("move %d:%d %d", start, end, position)
+	return c.Command("move %d:%d %d", start, end, position).OK()
 }
 
 // MoveID moves songid to position on the plyalist.
 func (c *Client) MoveID(songid, position int) error {
-	return c.okCmd("moveid %d %d", songid, position)
+	return c.Command("moveid %d %d", songid, position).OK()
 }
 
 // Add adds the file/directory uri to playlist. Directories add recursively.
 func (c *Client) Add(uri string) error {
-	return c.okCmd("add %s", quote(uri))
+	return c.Command("add %s", uri).OK()
 }
 
 // AddID adds the file/directory uri to playlist and returns the identity
@@ -411,7 +401,7 @@ func (c *Client) AddID(uri string, pos int) (int, error) {
 
 // Clear clears the current playlist.
 func (c *Client) Clear() error {
-	return c.okCmd("clear")
+	return c.Command("clear").OK()
 }
 
 // Shuffle shuffles the tracks from position start to position end in the
@@ -419,9 +409,9 @@ func (c *Client) Clear() error {
 // shuffled.
 func (c *Client) Shuffle(start, end int) error {
 	if start < 0 || end < 0 {
-		return c.okCmd("shuffle")
+		return c.Command("shuffle").OK()
 	}
-	return c.okCmd("shuffle %d:%d", start, end)
+	return c.Command("shuffle %d:%d", start, end).OK()
 }
 
 // Database related commands
@@ -579,12 +569,12 @@ func (c *Client) ListOutputs() ([]Attrs, error) {
 
 // EnableOutput enables the audio output with the given id.
 func (c *Client) EnableOutput(id int) error {
-	return c.okCmd("enableoutput %d", id)
+	return c.Command("enableoutput %d", id).OK()
 }
 
 // DisableOutput disables the audio output with the given id.
 func (c *Client) DisableOutput(id int) error {
-	return c.okCmd("disableoutput %d", id)
+	return c.Command("disableoutput %d", id).OK()
 }
 
 // Stored playlists related commands
@@ -604,47 +594,47 @@ func (c *Client) PlaylistContents(name string) ([]Attrs, error) {
 // If start and end are non-negative, only songs in this range are loaded.
 func (c *Client) PlaylistLoad(name string, start, end int) error {
 	if start < 0 || end < 0 {
-		return c.okCmd("load %s", quote(name))
+		return c.Command("load %s", name).OK()
 	}
-	return c.okCmd("load %s %d:%d", quote(name), start, end)
+	return c.Command("load %s %d:%d", name, start, end).OK()
 }
 
 // PlaylistAdd adds a song identified by uri to a stored playlist identified
 // by name.
 func (c *Client) PlaylistAdd(name string, uri string) error {
-	return c.okCmd("playlistadd %s %s", quote(name), quote(uri))
+	return c.Command("playlistadd %s %s", name, uri).OK()
 }
 
 // PlaylistClear clears the specified playlist.
 func (c *Client) PlaylistClear(name string) error {
-	return c.okCmd("playlistclear %s", quote(name))
+	return c.Command("playlistclear %s", name).OK()
 }
 
 // PlaylistDelete deletes the song at position pos from the specified playlist.
 func (c *Client) PlaylistDelete(name string, pos int) error {
-	return c.okCmd("playlistdelete %s %d", quote(name), pos)
+	return c.Command("playlistdelete %s %d", name, pos).OK()
 }
 
 // PlaylistMove moves a song identified by id in a playlist identified by name
 // to the position pos.
 func (c *Client) PlaylistMove(name string, id, pos int) error {
-	return c.okCmd("playlistmove %s %d %d", quote(name), id, pos)
+	return c.Command("playlistmove %s %d %d", name, id, pos).OK()
 }
 
 // PlaylistRename renames the playlist identified by name to newName.
 func (c *Client) PlaylistRename(name, newName string) error {
-	return c.okCmd("rename %s %s", quote(name), quote(newName))
+	return c.Command("rename %s %s", name, newName).OK()
 }
 
 // PlaylistRemove removes the playlist identified by name from the playlist
 // directory.
 func (c *Client) PlaylistRemove(name string) error {
-	return c.okCmd("rm %s", quote(name))
+	return c.Command("rm %s", name).OK()
 }
 
 // PlaylistSave saves the current playlist as name in the playlist directory.
 func (c *Client) PlaylistSave(name string) error {
-	return c.okCmd("save %s", quote(name))
+	return c.Command("save %s", name).OK()
 }
 
 // A Sticker represents a name/value pair associated to a song. Stickers
@@ -671,7 +661,7 @@ func parseSticker(s string) (*Sticker, error) {
 
 // StickerDelete deletes sticker for the song with given URI.
 func (c *Client) StickerDelete(uri string, name string) error {
-	return c.okCmd("sticker delete song %s %s", uri, name)
+	return c.Command("sticker delete song %s %s", uri, name).OK()
 }
 
 // StickerFind finds songs inside directory with URI which have a sticker with given name.
@@ -740,5 +730,5 @@ func (c *Client) StickerList(uri string) ([]Sticker, error) {
 
 // StickerSet sets sticker value for the song with given URI.
 func (c *Client) StickerSet(uri string, name string, value string) error {
-	return c.okCmd("sticker set song %s %s %s", quote(uri), name, value)
+	return c.Command("sticker set song %s %s %s", uri, name, value).OK()
 }
