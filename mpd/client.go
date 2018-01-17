@@ -214,7 +214,7 @@ func (c *Client) okCmd(format string, args ...interface{}) error {
 }
 
 func (c *Client) idle(subsystems ...string) ([]string, error) {
-	return c.Command("idle %s", strings.Join(subsystems, " ")).Strings("changed")
+	return c.Command("idle %s", Quoted(strings.Join(subsystems, " "))).Strings("changed")
 }
 
 func (c *Client) noIdle() (err error) {
@@ -394,9 +394,9 @@ func (c *Client) Add(uri string) error {
 func (c *Client) AddID(uri string, pos int) (int, error) {
 	var cmd *Command
 	if pos >= 0 {
-		cmd = c.Command("addid %s %d", quote(uri), pos)
+		cmd = c.Command("addid %s %d", uri, pos)
 	} else {
-		cmd = c.Command("addid %s", quote(uri))
+		cmd = c.Command("addid %s", uri)
 	}
 	attrs, err := cmd.Attrs()
 	if err != nil {
@@ -530,7 +530,7 @@ func (c *Client) ListInfo(uri string) ([]Attrs, error) {
 // ReadComments reads "comments" (audio metadata) from the song URI using
 // MPD's readcomments command.
 func (c *Client) ReadComments(uri string) (Attrs, error) {
-	return c.Command("readcomments %s", quote(uri)).Attrs()
+	return c.Command("readcomments %s", uri).Attrs()
 }
 
 // Find returns attributes for songs in the library. You can find songs that
@@ -597,7 +597,7 @@ func (c *Client) ListPlaylists() ([]Attrs, error) {
 // PlaylistContents returns a list of attributes for songs in the specified
 // stored playlist.
 func (c *Client) PlaylistContents(name string) ([]Attrs, error) {
-	return c.Command("listplaylistinfo %s", quote(name)).AttrsList("file")
+	return c.Command("listplaylistinfo %s", name).AttrsList("file")
 }
 
 // PlaylistLoad loads the specfied playlist into the current queue.
@@ -677,7 +677,7 @@ func (c *Client) StickerDelete(uri string, name string) error {
 // StickerFind finds songs inside directory with URI which have a sticker with given name.
 // It returns a slice of URIs of matching songs and a slice of corresponding stickers.
 func (c *Client) StickerFind(uri string, name string) ([]string, []Sticker, error) {
-	attrs, err := c.Command("sticker find song %s %s", quote(uri), name).AttrsList("file")
+	attrs, err := c.Command("sticker find song %s %s", uri, name).AttrsList("file")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -702,7 +702,7 @@ func (c *Client) StickerFind(uri string, name string) ([]string, []Sticker, erro
 
 // StickerGet gets sticker value for the song with given URI.
 func (c *Client) StickerGet(uri string, name string) (*Sticker, error) {
-	attrs, err := c.Command("sticker get song %s %s", quote(uri), name).Attrs()
+	attrs, err := c.Command("sticker get song %s %s", uri, name).Attrs()
 	if err != nil {
 		return nil, err
 	}
@@ -719,7 +719,7 @@ func (c *Client) StickerGet(uri string, name string) (*Sticker, error) {
 
 // StickerList returns a slice of stickers for the song with given URI.
 func (c *Client) StickerList(uri string) ([]Sticker, error) {
-	attrs, err := c.Command("sticker list song %s", quote(uri)).AttrsList("sticker")
+	attrs, err := c.Command("sticker list song %s", uri).AttrsList("sticker")
 	if err != nil {
 		return nil, err
 	}

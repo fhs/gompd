@@ -6,22 +6,38 @@ package mpd
 
 import "fmt"
 
+// Quoted is a string that do no need to be quoted.
+type Quoted string
+
+// Command returns a command that can be sent to MPD sever.
+// It enables low-level access to MPD protocol and should be avoided if
+// the user is not familiar with MPD protocol.
+//
+// Strings in args are automatically quoted so that spaces are preserved.
+// Pass strings as Quoted type if this is not desired.
+func (c *Client) Command(format string, args ...interface{}) *Command {
+	for i := range args {
+		switch s := args[i].(type) {
+		case Quoted: // ignore
+		case string:
+			args[i] = quote(s)
+		}
+	}
+	return &Command{
+		client: c,
+		cmd:    fmt.Sprintf(format, args...),
+	}
+}
+
 // A Command represents a MPD command.
 type Command struct {
 	client *Client
 	cmd    string
 }
 
-// TODO: automatically quote strings
-
-// Command returns a command that can be sent to MPD sever.
-// It enables low-level access to MPD protocol and should be avoided if
-// the user is not familiar with MPD protocol.
-func (c *Client) Command(format string, args ...interface{}) *Command {
-	return &Command{
-		client: c,
-		cmd:    fmt.Sprintf(format, args...),
-	}
+// String returns the encoded command.
+func (cmd *Command) String() string {
+	return cmd.cmd
 }
 
 // OK sends command to server and checks for error.
