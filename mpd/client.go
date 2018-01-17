@@ -652,6 +652,10 @@ func newSticker(name, value string) *Sticker {
 }
 
 func parseSticker(s string) (*Sticker, error) {
+	// Since '=' can appear in the sticker name and in the sticker value,
+	// it's impossible to determine where the name ends and value starts.
+	// Assume that '=' is more likely to occur in the value
+	// (e.g. base64 encoded data -- see #39).
 	i := strings.Index(s, "=")
 	if i < 0 {
 		return nil, textproto.ProtocolError("parsing sticker failed")
