@@ -12,6 +12,7 @@ import (
 	"net/textproto"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Quote quotes strings in the format understood by MPD.
@@ -257,14 +258,35 @@ func (c *Client) Previous() error {
 }
 
 // Seek seeks to the position time (in seconds) of the song at playlist position pos.
+// This method is deprecated in favor of SeekPos.
 func (c *Client) Seek(pos, time int) error {
 	return c.Command("seek %d %d", pos, time).OK()
 }
 
 // SeekID is identical to Seek except the song is identified by it's id
 // (not position in playlist).
+// This method is deprecated in favor of SeekSongID.
 func (c *Client) SeekID(id, time int) error {
 	return c.Command("seekid %d %d", id, time).OK()
+}
+
+// SeekPos seeks to the position d of the song at playlist position pos.
+func (c *Client) SeekPos(pos int, d time.Duration) error {
+	return c.Command("seek %d %f", pos, d.Seconds()).OK()
+}
+
+// SeekSongID seeks to the position d of the song identified by id.
+func (c *Client) SeekSongID(id int, d time.Duration) error {
+	return c.Command("seekid %d %f", id, d.Seconds()).OK()
+}
+
+// SeekCur seeks to the position d within the current song.
+// If relative is true, then the time is relative to the current playing position.
+func (c *Client) SeekCur(d time.Duration, relative bool) error {
+	if relative {
+		return c.Command("seekcur %+f", d.Seconds()).OK()
+	}
+	return c.Command("seekcur %f", d.Seconds()).OK()
 }
 
 // Stop stops playback.
