@@ -523,11 +523,20 @@ func (c *Client) ReadComments(uri string) (Attrs, error) {
 	return c.Command("readcomments %s", uri).Attrs()
 }
 
-// Find returns attributes for songs in the library. You can find songs that
-// belong to an artist and belong to the album by searching:
-// `find artist "<Artist>" album "<Album>"`
+// Find searches the library for songs and returns attributes for each matching song.
+// The args are the raw arguments passed to MPD. For example, to search for
+// songs that belong to a specific artist and album:
+//
+//	Find("artist", "Artist Name", "album", "Album Name")
+//
+// Searches are case sensitive. Use Search for case insensitive search.
 func (c *Client) Find(args ...string) ([]Attrs, error) {
 	return c.Command("find " + quoteArgs(args)).AttrsList("file")
+}
+
+// Search behaves exactly the same as Find, but the searches are not case sensitive.
+func (c *Client) Search(args ...string) ([]Attrs, error) {
+	return c.Command("search " + quoteArgs(args)).AttrsList("file")
 }
 
 // List searches the database for your query. You can use something simple like
