@@ -530,6 +530,17 @@ func (c *Client) Find(args ...string) ([]Attrs, error) {
 	return c.Command("find " + quoteArgs(args)).AttrsList("file")
 }
 
+func (c *Client) FindKind(kind string, what string) ([]Attrs, error) {
+	id, err := c.cmd("find " + kind + " " + quote(what))
+	if err != nil {
+		return nil, err
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	return c.readAttrsList("file")
+}
+
 // List searches the database for your query. You can use something simple like
 // `artist` for your search, or something like `artist album <Album Name>` if
 // you want the artist that has an album with a specified album name.
@@ -731,4 +742,31 @@ func (c *Client) StickerList(uri string) ([]Sticker, error) {
 // StickerSet sets sticker value for the song with given URI.
 func (c *Client) StickerSet(uri string, name string, value string) error {
 	return c.Command("sticker set song %s %s %s", uri, name, value).OK()
+}
+
+// PlChanges returns the playlist changes in the playlist since <version>.
+func (c *Client) PlChanges(version, start, end int) ([]Attrs, error) {
+	var id uint
+	var err error
+
+	switch {
+	case start < 0 && end < 0:
+		// Request all playlist items.
+		id, err = c.cmd("plchanges %d", version)
+	case start >= 0 && end >= 0:
+		// Request this range of playlist items.
+		id, err = c.cmd("plchanges %d %d:%d", version, start, end)
+	case start < 0 && end >= 0:
+		return nil, errors.New("negative start index")
+	default:
+		panic("unreachable")
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+	return c.readAttrsList("file")
 }
