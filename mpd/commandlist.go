@@ -140,7 +140,7 @@ func (cl *CommandList) Seek(pos, time int) {
 // SeekID is identical to Seek except the song is identified by it's id
 // (not position in playlist).
 func (cl *CommandList) SeekID(id, time int) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("seek %d %d", id, time), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("seekid %d %d", id, time), nil, cmdNoReturn})
 }
 
 // Stop stops playback.
