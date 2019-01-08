@@ -118,7 +118,7 @@ func (s *Sticker) String() string {
 type Stickers map[string]*Sticker
 
 func NewStickers() Stickers {
-	return make(Stickers, 0)
+	return make(Stickers)
 }
 
 func (ss Stickers) Set(name, value string) {

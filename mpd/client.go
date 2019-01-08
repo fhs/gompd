@@ -258,14 +258,14 @@ func (c *Client) Previous() error {
 }
 
 // Seek seeks to the position time (in seconds) of the song at playlist position pos.
-// This method is deprecated in favor of SeekPos.
+// Deprecated: Use SeekPos instead.
 func (c *Client) Seek(pos, time int) error {
 	return c.Command("seek %d %d", pos, time).OK()
 }
 
 // SeekID is identical to Seek except the song is identified by it's id
 // (not position in playlist).
-// This method is deprecated in favor of SeekSongID.
+// Deprecated: Use SeekSongID instead.
 func (c *Client) SeekID(id, time int) error {
 	return c.Command("seekid %d %d", id, time).OK()
 }
