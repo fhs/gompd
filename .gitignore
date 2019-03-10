@@ -1,3 +1,4 @@
 # VIM
 *.swp
 *.swo
+.idea

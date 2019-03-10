@@ -23,9 +23,13 @@ func (c *Client) Command(format string, args ...interface{}) *Command {
 			args[i] = quote(s)
 		}
 	}
+	cmd := fmt.Sprintf(format, args...)
+	if len(args) == 0 {
+		cmd = format
+	}
 	return &Command{
 		client: c,
-		cmd:    fmt.Sprintf(format, args...),
+		cmd:    cmd,
 	}
 }
 
