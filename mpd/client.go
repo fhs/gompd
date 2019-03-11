@@ -93,7 +93,11 @@ func (c *Client) cmd(format string, args ...interface{}) (uint, error) {
 }
 
 func (c *Client) printfLine(format string, args ...interface{}) error {
-	fmt.Fprintf(c.text.W, format, args...)
+	if len(args) == 0 {
+		fmt.Fprint(c.text.W, format)
+	} else {
+		fmt.Fprintf(c.text.W, format, args...)
+	}
 	c.text.W.WriteByte('\n')
 	return c.text.W.Flush()
 }
