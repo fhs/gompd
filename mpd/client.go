@@ -366,7 +366,6 @@ func (c *Client) PlaylistInfo(start, end int) ([]Attrs, error) {
 func (c *Client) Prio(prio, start, end int) error {
 	switch {
 	case start < 0 && end < 0:
-		// Request all playlist items.
 		return errors.New("negative start and end index")
 	case start >= 0 && end >= 0:
 		// Update the prio for this range of playlist items.
