@@ -66,7 +66,7 @@ func Dial(network, addr string) (c *Client, err error) {
 	if line[0:6] != "OK MPD" {
 		return nil, textproto.ProtocolError("no greeting")
 	}
-	return &Client{text: text}, nil
+	return &Client{text: text, version: line[7:]}, nil
 }
 
 // DialAuthenticated connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
