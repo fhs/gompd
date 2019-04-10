@@ -162,7 +162,7 @@ func (cl *CommandList) Random(random bool) {
 	}
 }
 
-// Repeat enables reapeat mode, if repeat is true, disables it otherwise.
+// Repeat enables repeat mode, if repeat is true, disables it otherwise.
 func (cl *CommandList) Repeat(repeat bool) {
 	if repeat {
 		cl.cmdQ.PushBack(&command{"repeat 1", nil, cmdNoReturn})
