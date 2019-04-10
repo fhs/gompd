@@ -22,10 +22,16 @@ func quote(s string) string {
 	i := 0
 	q[i], i = '"', i+1
 	for _, c := range []byte(s) {
-		if c == '"' {
+		switch c {
+		case '"':
 			q[i], i = '\\', i+1
 			q[i], i = '"', i+1
-		} else {
+		case '%':
+			// Note: the quoted string will be used as format string in cmd()
+			// → escape the percent sign to make it literal
+			q[i], i = '%', i+1
+			q[i], i = '%', i+1
+		default:
 			q[i], i = c, i+1
 		}
 	}
