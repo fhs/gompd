@@ -257,16 +257,16 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			var err error
 			start, err = strconv.Atoi(rng[0])
 			if err != nil {
-				ack("Integer or range expected")
+				ack("integer or range expected")
 				return
 			}
 			end, err := strconv.Atoi(rng[1])
 			if err != nil {
-				ack("Integer or range expected")
+				ack("integer or range expected")
 				return
 			}
 			if start < 0 || end < 0 {
-				ack("Number is negative")
+				ack("number is negative")
 				return
 			}
 		}
@@ -387,6 +387,64 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			return
 		}
 		s.currentPlaylist.Add(i)
+	case "prio":
+		if len(args) != 3 {
+			ack("wrong number of arguments")
+			return
+		}
+		rng := strings.Split(args[2], ":")
+		prio, err := strconv.Atoi(args[1])
+		if err != nil || prio < 0 || prio > 255 {
+			ack("invalid priority")
+			return
+		}
+
+		switch len(rng) {
+		case 1:
+			// Updating a single song from the playlist at position i.
+			i, err := strconv.Atoi(rng[0])
+			if err != nil {
+				ack("invalid song position")
+				return
+			}
+			// Note: we don't check end as it does not matter for our test case
+			if i < 0 {
+				ack("invalid song position")
+			}
+		case 2:
+			// Updating a range of the playlist from specified start/end positions.
+			start, err := strconv.Atoi(rng[0])
+			if err != nil {
+				ack("integer or range expected")
+				return
+			}
+			end, err := strconv.Atoi(rng[1])
+			if err != nil {
+				ack("integer or range expected")
+				return
+			}
+			if start < 0 || end < 0 {
+				ack("number is negative")
+				return
+			}
+		default:
+			ack("invalid range")
+		}
+	case "prioid":
+		if len(args) != 3 {
+			ack("wrong number of arguments")
+			return
+		}
+		prio, err := strconv.Atoi(args[1])
+		if err != nil || prio < 0 || prio > 255 {
+			ack("invalid priority")
+			return
+		}
+		id, err := strconv.Atoi(args[2])
+		if err != nil || id < 0 {
+			ack("invalid song ID")
+			return
+		}
 	case "delete":
 		if len(args) != 2 {
 			ack("wrong number of arguments")
