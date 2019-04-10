@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/fhs/gompd/v2/mpd/internal/server"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -462,4 +463,35 @@ func TestQuote(t *testing.T) {
 			t.Errorf("quote(%s) returned %s; expected %s\n", test.s, q, test.q)
 		}
 	}
+}
+
+// TODO test adding at position
+// TODO test “addid” failures
+//      - invalid position
+//      - unexpected result (not an ID)
+//      - invalid song
+func TestAddIDAndDeleteID(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	id1, err := cli.AddID("song0042.ogg", -1)
+	if !assert.NoError(t, err) {
+		return
+	}
+	id2, err := cli.AddID("song0042.ogg", -1)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.NotEqual(t, id1, id2)
+
+	if err := cli.DeleteID(id1); !assert.NoError(t, err) {
+		return
+	}
+	if err := cli.DeleteID(id1); assert.Error(t, err) {
+		if assert.IsType(t, CommandError{}, err) {
+			assert.Equal(t, AckErrorNoExist, err.(CommandError).Code)
+		}
+	}
+	err = cli.DeleteID(id2)
+	assert.NoError(t, err)
 }

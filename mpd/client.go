@@ -10,10 +10,17 @@ import (
 	"errors"
 	"fmt"
 	"net/textproto"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
+
+var errorRegexp *regexp.Regexp
+
+func init() {
+	errorRegexp = regexp.MustCompile("^ACK( \\[(\\d+)@(\\d+)\\])?( {([^}]*)})? (.*)$")
+}
 
 // Quote quotes strings in the format understood by MPD.
 // See: http://git.musicpd.org/cgit/master/mpd.git/tree/src/util/Tokenizer.cxx
@@ -46,6 +53,46 @@ func quoteArgs(args []string) string {
 // Client represents a client connection to a MPD server.
 type Client struct {
 	text *textproto.Conn
+}
+
+// CommandError represents an error returned by the MPD server.
+// It contains the error number, the index of the causing command in the command list,
+// the name of the command in the command list and the error message.
+type CommandError struct {
+	Code             CommandErrorCode
+	CommandListIndex int
+	CommandName      string
+	Message          string
+}
+
+// CommandErrorCode is the error code of a CommandError.
+type CommandErrorCode int
+
+// CommandErrorCodes as defined in MPD source (src/protocol/Ack.hxx) version 0.21.7.
+const (
+	AckErrorNotList CommandErrorCode = iota + 1
+	AckErrorArg
+	AckErrorPassword
+	AckErrorPermission
+	AckErrorUnknown
+)
+
+// CommandErrorCodes as defined in MPD source (src/protocol/Ack.hxx) version 0.21.7.
+const (
+	AckErrorNoExist CommandErrorCode = iota + 50
+	AckErrorPlaylistMax
+	AckErrorSystem
+	AckErrorPlaylistLoad
+	AckErrorUpdateAlready
+	AckErrorPlayerSync
+	AckErrorExist
+)
+
+func (e CommandError) Error() string {
+	if e.CommandName != "" {
+		return fmt.Sprintf("command '%s' failed: %s", e.CommandName, e.Message)
+	}
+	return e.Message
 }
 
 // Attrs is a set of attributes returned by MPD.
@@ -201,7 +248,30 @@ func (c *Client) readOKLine(terminator string) (err error) {
 	if line == terminator {
 		return nil
 	}
-	return textproto.ProtocolError("unexpected response: " + line)
+	match := errorRegexp.FindStringSubmatch(line)
+	if match == nil {
+		return textproto.ProtocolError("unexpected response: " + line)
+	}
+	var code int
+	if rawCode := match[2]; rawCode != "" {
+		code, err = strconv.Atoi(rawCode)
+		if err != nil {
+			return
+		}
+	}
+	var index int
+	if rawIndex := match[3]; rawIndex != "" {
+		index, err = strconv.Atoi(rawIndex)
+		if err != nil {
+			return
+		}
+	}
+	return CommandError{
+		Code:             CommandErrorCode(code),
+		CommandListIndex: index,
+		CommandName:      match[5],
+		Message:          match[6],
+	}
 }
 
 func (c *Client) idle(subsystems ...string) ([]string, error) {
