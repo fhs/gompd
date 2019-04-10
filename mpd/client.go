@@ -45,7 +45,8 @@ func quoteArgs(args []string) string {
 
 // Client represents a client connection to a MPD server.
 type Client struct {
-	text *textproto.Conn
+	text    *textproto.Conn
+	version string
 }
 
 // Attrs is a set of attributes returned by MPD.
@@ -65,7 +66,7 @@ func Dial(network, addr string) (c *Client, err error) {
 	if line[0:6] != "OK MPD" {
 		return nil, textproto.ProtocolError("no greeting")
 	}
-	return &Client{text: text}, nil
+	return &Client{text: text, version: line[7:]}, nil
 }
 
 // DialAuthenticated connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
@@ -77,6 +78,11 @@ func DialAuthenticated(network, addr, password string) (c *Client, err error) {
 		err = c.Command("password %s", password).OK()
 	}
 	return c, err
+}
+
+// Version returns the protocol version used as provided during the handshake.
+func (c *Client) Version() string {
+	return c.version
 }
 
 // We are reimplemeting Cmd() and PrintfLine() from textproto here, because

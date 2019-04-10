@@ -253,6 +253,15 @@ func TestReadComments(t *testing.T) {
 	}
 }
 
+func TestVersion(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	if cli.Version() != "gompd0.1" {
+		t.Errorf("Client.Version failed: %s != gompd0.1\n", cli.Version())
+	}
+}
+
 func TestPing(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
