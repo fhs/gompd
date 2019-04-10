@@ -298,7 +298,7 @@ func TestPriorityID(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
-	cli := localDial(t)Ver
+	cli := localDial(t)
 	defer teardown(cli, t)
 
 	if cli.Version() != "gompd0.1" {
