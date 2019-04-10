@@ -257,16 +257,16 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			var err error
 			start, err = strconv.Atoi(rng[0])
 			if err != nil {
-				ack("Integer or range expected")
+				ack("integer or range expected")
 				return
 			}
 			end, err := strconv.Atoi(rng[1])
 			if err != nil {
-				ack("Integer or range expected")
+				ack("integer or range expected")
 				return
 			}
 			if start < 0 || end < 0 {
-				ack("Number is negative")
+				ack("number is negative")
 				return
 			}
 		}
@@ -393,56 +393,55 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			return
 		}
 		rng := strings.Split(args[2], ":")
-		var prio, start, end int
-		var err error
-		prio, err = strconv.Atoi(args[1])
+		prio, err := strconv.Atoi(args[1])
 		if err != nil || prio < 0 || prio > 255 {
 			ack("invalid priority")
 			return
 		}
-
-		if len(rng) == 1 {
+		switch len(rng) {
+		case 1:
 			// Updating a single song from the playlist at position i.
 			i, err := strconv.Atoi(rng[0])
 			if err != nil {
 				ack("invalid song position")
 				return
 			}
-			start = i
-			end = i + 1
-		} else if len(rng) == 2 {
+			// NOTE: we do not check if the end position is valid
+			// (end < s.currentPlaylist.Len()) as it does not matter for the current
+			// test cases
+			if i < 0 {
+				ack("invalid song position")
+			}
+		case 2:
 			// Updating a range of the playlist from specified start/end positions.
-			start, err = strconv.Atoi(rng[0])
+			start, err := strconv.Atoi(rng[0])
 			if err != nil {
-				ack("Integer or range expected")
+				ack("integer or range expected")
 				return
 			}
-			end, err = strconv.Atoi(rng[1])
+			end, err := strconv.Atoi(rng[1])
 			if err != nil {
-				ack("Integer or range expected")
+				ack("integer or range expected")
 				return
 			}
 			if start < 0 || end < 0 {
-				ack("Number is negative")
+				ack("invalid song position")
 				return
 			}
-		} else {
+		default:
 			ack("invalid range")
-			return
 		}
 	case "prioid":
 		if len(args) != 3 {
 			ack("wrong number of arguments")
 			return
 		}
-		var prio, ID int
-		var err error
-		prio, err = strconv.Atoi(args[1])
+		prio, err := strconv.Atoi(args[1])
 		if err != nil || prio < 0 || prio > 255 {
 			ack("invalid priority")
 			return
 		}
-		ID, err = strconv.Atoi(args[2])
+		ID, err := strconv.Atoi(args[2])
 		if err != nil || ID < 0 {
 			ack("invalid ID")
 			return
