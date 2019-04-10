@@ -203,7 +203,7 @@ func (cl *CommandList) Delete(start, end int) error {
 	if end < 0 {
 		cl.cmdQ.PushBack(&command{fmt.Sprintf("delete %d", start), nil, cmdNoReturn})
 	} else {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("delete %d %d", start, end), nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("delete %d:%d", start, end), nil, cmdNoReturn})
 	}
 	return nil
 }
