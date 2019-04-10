@@ -361,7 +361,7 @@ func (c *Client) PlaylistInfo(start, end int) ([]Attrs, error) {
 }
 
 // SetPriority set the priority of the specified songs. If end is negative but
-// start is non-ngeative, it does it for the song at position start. If both
+// start is non-negative, it does it for the song at position start. If both
 // start and end are non-negative, it does it for positions in range
 // [start, end).
 func (c *Client) SetPriority(priority, start, end int) error {
