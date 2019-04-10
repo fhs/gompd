@@ -252,6 +252,39 @@ func TestReadComments(t *testing.T) {
 		t.Fatalf("comments (attrs=%v) has no ARTIST attribute", attrs)
 	}
 }
+func TestPriority(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	if err := cli.SetPriority(255, 1, 1); err != nil {
+		t.Errorf("Client.SetPriority failed: %s\n", err)
+	}
+	if err := cli.SetPriority(255, 1, -1); err != nil {
+		t.Errorf("Client.SetPriority failed: %s\n", err)
+	}
+	if err := cli.SetPriority(256, 1, -1); err == nil {
+		t.Error("Client.SetPriority succeeded altough it should have failed\n")
+	}
+	if err := cli.SetPriority(-1, 1, -1); err == nil {
+		t.Error("Client.SetPriority succeeded altough it should have failed\n")
+	}
+	if err := cli.SetPriority(255, -1, -1); err == nil {
+		t.Error("Client.SetPriority succeeded altough it should have failed\n")
+	}
+
+	if err := cli.SetPriorityID(255, 1); err != nil {
+		t.Errorf("Client.SetPriorityID failed: %s\n", err)
+	}
+	if err := cli.SetPriorityID(256, 1); err == nil {
+		t.Error("Client.SetPriorityID succeeded altough it should have failed\n")
+	}
+	if err := cli.SetPriorityID(-1, 1); err == nil {
+		t.Error("Client.SetPriorityID succeeded altough it should have failed\n")
+	}
+	if err := cli.SetPriorityID(255, -1); err == nil {
+		t.Error("Client.SetPriorityID succeeded altough it should have failed\n")
+	}
+}
 
 func TestVersion(t *testing.T) {
 	cli := localDial(t)

@@ -366,6 +366,32 @@ func (c *Client) PlaylistInfo(start, end int) ([]Attrs, error) {
 	return cmd.AttrsList("file")
 }
 
+// SetPriority set the priority of the specified songs. If end is negative but
+// start is non-negative, it does it for the song at position start. If both
+// start and end are non-negative, it does it for positions in range
+// [start, end).
+func (c *Client) SetPriority(priority, start, end int) error {
+	switch {
+	case start < 0 && end < 0:
+		return errors.New("negative start and end index")
+	case start >= 0 && end >= 0:
+		// Update the prio for this range of playlist items.
+		return c.Command("prio %d %d:%d", priority, start, end).OK()
+	case start >= 0 && end < 0:
+		// Update the prio for a single playlist item at this position.
+		return c.Command("prio %d %d", priority, start).OK()
+	case start < 0 && end >= 0:
+		return errors.New("negative start index")
+	default:
+		panic("unreachable")
+	}
+}
+
+// SetPriorityID set the prio of the song with the given id
+func (c *Client) SetPriorityID(prio, id int) error {
+	return c.Command("prioid %d %d", prio, id).OK()
+}
+
 // Delete deletes songs from playlist. If both start and end are positive,
 // it deletes those at positions in range [start, end). If end is negative,
 // it deletes the song at position start.
