@@ -296,6 +296,16 @@ func TestPriorityID(t *testing.T) {
 		}
 	}
 }
+
+func TestVersion(t *testing.T) {
+	cli := localDial(t)Ver
+	defer teardown(cli, t)
+
+	if cli.Version() != "gompd0.1" {
+		t.Errorf("Client.Version failed: %s != gompd0.1\n", cli.Version())
+	}
+}
+
 func TestPing(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
@@ -497,6 +507,8 @@ var quoteTests = []struct {
 	{`test.ogg`, `"test.ogg"`},
 	{`test "song".ogg`, `"test \"song\".ogg"`},
 	{`04 - ILL - DECAYED LOVE　feat.℃iel.ogg`, `"04 - ILL - DECAYED LOVE　feat.℃iel.ogg"`},
+	{`95%.mp3`, `"95%%.mp3"`},
+	{`%d95%s.mp3`, `"%%d95%%s.mp3"`},
 }
 
 func TestQuote(t *testing.T) {
