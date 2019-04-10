@@ -80,7 +80,7 @@ func DialAuthenticated(network, addr, password string) (c *Client, err error) {
 	return c, err
 }
 
-// Version returns the protocol version used as provided during the handshake
+// Version returns the protocol version used as provided during the handshake.
 func (c *Client) Version() string {
 	return c.version
 }
