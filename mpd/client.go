@@ -360,9 +360,10 @@ func (c *Client) PlaylistInfo(start, end int) ([]Attrs, error) {
 	return cmd.AttrsList("file")
 }
 
-// SetPriority set the priority of the specified songs. If end is negative but start
-// is positive, it does it for the song at position start. If both start and
-// end are positive, it does it for positions in range [start, end).
+// SetPriority set the priority of the specified songs. If end is negative but
+// start is non-ngeative, it does it for the song at position start. If both
+// start and end are non-negative, it does it for positions in range
+// [start, end).
 func (c *Client) SetPriority(priority, start, end int) error {
 	switch {
 	case start < 0 && end < 0:
