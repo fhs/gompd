@@ -463,6 +463,8 @@ var quoteTests = []struct {
 	{`test.ogg`, `"test.ogg"`},
 	{`test "song".ogg`, `"test \"song\".ogg"`},
 	{`04 - ILL - DECAYED LOVE　feat.℃iel.ogg`, `"04 - ILL - DECAYED LOVE　feat.℃iel.ogg"`},
+	{`95%.mp3`, `"95%%.mp3"`},
+	{`%d95%s.mp3`, `"%%d95%%s.mp3"`},
 }
 
 func TestQuote(t *testing.T) {
