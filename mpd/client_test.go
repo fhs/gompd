@@ -255,37 +255,47 @@ func TestReadComments(t *testing.T) {
 func TestPriority(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
-
-	if err := cli.SetPriority(255, 1, 1); err != nil {
-		t.Errorf("Client.SetPriority failed: %s\n", err)
-	}
-	if err := cli.SetPriority(255, 1, -1); err != nil {
-		t.Errorf("Client.SetPriority failed: %s\n", err)
-	}
-	if err := cli.SetPriority(256, 1, -1); err == nil {
-		t.Error("Client.SetPriority succeeded altough it should have failed\n")
-	}
-	if err := cli.SetPriority(-1, 1, -1); err == nil {
-		t.Error("Client.SetPriority succeeded altough it should have failed\n")
-	}
-	if err := cli.SetPriority(255, -1, -1); err == nil {
-		t.Error("Client.SetPriority succeeded altough it should have failed\n")
-	}
-
-	if err := cli.SetPriorityID(255, 1); err != nil {
-		t.Errorf("Client.SetPriorityID failed: %s\n", err)
-	}
-	if err := cli.SetPriorityID(256, 1); err == nil {
-		t.Error("Client.SetPriorityID succeeded altough it should have failed\n")
-	}
-	if err := cli.SetPriorityID(-1, 1); err == nil {
-		t.Error("Client.SetPriorityID succeeded altough it should have failed\n")
-	}
-	if err := cli.SetPriorityID(255, -1); err == nil {
-		t.Error("Client.SetPriorityID succeeded altough it should have failed\n")
+	for _, tc := range []struct {
+		priority, start, end int
+		ok                   bool
+	}{
+		{255, 1, 1, true},
+		{255, 1, -1, true},
+		{256, 1, -1, false},
+		{-1, 1, -1, false},
+	} {
+		// if tc.ok is true,, err should be nil
+		err := cli.SetPriority(tc.priority, tc.start, tc.end)
+		if err != nil && tc.ok {
+			t.Errorf("Client.SetPriority failed: %s\n", err)
+		}
+		if err == nil && !tc.ok {
+			t.Errorf("Client.SetPriority succeeded, but it should have failed\n")
+		}
 	}
 }
-
+func TestPriorityID(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+	for _, tc := range []struct {
+		priority, pos int
+		ok            bool
+	}{
+		{255, 1, true},
+		{255, 1, true},
+		{256, 1, false},
+		{-1, 1, false},
+	} {
+		// if tc.ok is true,, err should be nil
+		err := cli.SetPriorityID(tc.priority, tc.pos)
+		if err != nil && tc.ok {
+			t.Errorf("Client.SetPriorityID failed: %s\n", err)
+		}
+		if err == nil && !tc.ok {
+			t.Errorf("Client.SetPriorityID succeeded, but it should have failed\n")
+		}
+	}
+}
 func TestPing(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
