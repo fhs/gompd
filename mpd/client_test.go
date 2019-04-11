@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/fhs/gompd/v2/mpd/internal/server"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -475,23 +474,32 @@ func TestAddIDAndDeleteID(t *testing.T) {
 	defer teardown(cli, t)
 
 	id1, err := cli.AddID("song0042.ogg", -1)
-	if !assert.NoError(t, err) {
-		return
+	if err != nil {
+		t.Fatalf("Client.AddID failed: %s\n", err)
 	}
 	id2, err := cli.AddID("song0042.ogg", -1)
-	if !assert.NoError(t, err) {
-		return
+	if err != nil {
+		t.Fatalf("Client.AddID failed: %s\n", err)
 	}
-	assert.NotEqual(t, id1, id2)
+	if id1 == id2 {
+		t.Fatalf("Client.AddID returned the same ID twice\n")
+	}
 
-	if err := cli.DeleteID(id1); !assert.NoError(t, err) {
-		return
+	if err := cli.DeleteID(id1); err != nil {
+		t.Fatalf("Client.DeleteID failed: %s\n", err)
 	}
-	if err := cli.DeleteID(id1); assert.Error(t, err) {
-		if assert.IsType(t, Error{}, err) {
-			assert.Equal(t, ErrorNoExist, err.(Error).Code)
-		}
+	err = cli.DeleteID(id1)
+	if err == nil {
+		t.Fatalf("Client.DeleteID did not fail on second delete of an ID\n")
 	}
-	err = cli.DeleteID(id2)
-	assert.NoError(t, err)
+	mpdErr, ok := err.(Error)
+	if !ok {
+		t.Fatalf("Client.DeleteID did not fail with an mpd.Error\n")
+	}
+	if mpdErr.Code != ErrorNoExist {
+		t.Fatalf("Unexpected error code: expected %d, got %d\n", ErrorNoExist, mpdErr.Code)
+	}
+	if err := cli.DeleteID(id2); err != nil {
+		t.Fatalf("Client.DeleteID failed: %s\n", err)
+	}
 }
