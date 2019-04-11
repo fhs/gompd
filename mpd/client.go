@@ -387,7 +387,7 @@ func (c *Client) SetPriority(priority, start, end int) error {
 	}
 }
 
-// SetPriorityID sets the prio of the song with the given id
+// SetPriorityID sets the prio of the song with the given id.
 func (c *Client) SetPriorityID(priority, id int) error {
 	return c.Command("prioid %d %d", priority, id).OK()
 }
