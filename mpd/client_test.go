@@ -253,6 +253,15 @@ func TestReadComments(t *testing.T) {
 	}
 }
 
+func TestVersion(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	if cli.Version() != "gompd0.1" {
+		t.Errorf("Client.Version failed: %s != gompd0.1\n", cli.Version())
+	}
+}
+
 func TestPing(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
@@ -460,6 +469,53 @@ func TestQuote(t *testing.T) {
 	for _, test := range quoteTests {
 		if q := quote(test.s); q != test.q {
 			t.Errorf("quote(%s) returned %s; expected %s\n", test.s, q, test.q)
+		}
+	}
+}
+
+func TestPriority(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+	for _, tc := range []struct {
+		priority, start, end int
+		ok                   bool
+	}{
+		{255, 1, 1, true},
+		{255, 1, 1, true},
+		{256, 1, -1, false},
+		{-1, 1, 1, false},
+	} {
+		// if tc.ok is true,, err should be nil
+		err := cli.SetPriority(tc.priority, tc.start, tc.end)
+		if err != nil && tc.ok {
+			t.Errorf("Client.SetPriority failed: %s\n", err)
+		}
+		if err == nil && !tc.ok {
+			t.Errorf("Client.SetPriority succeeded when it should fail\n")
+		}
+	}
+}
+
+func TestPriorityID(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+	for _, tc := range []struct {
+		priority, id int
+		ok           bool
+	}{
+		{255, 1, true},
+		{255, 1, true},
+		{256, 1, false},
+		{-1, 1, false},
+		{1, -1, false},
+	} {
+		// if tc.ok is true,, err should be nil
+		err := cli.SetPriorityID(tc.priority, tc.id)
+		if err != nil && tc.ok {
+			t.Errorf("Client.SetPriorityID failed: %s\n", err)
+		}
+		if err == nil && !tc.ok {
+			t.Errorf("Client.SetPriorityID succeeded when it should fail\n")
 		}
 	}
 }

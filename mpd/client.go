@@ -45,7 +45,8 @@ func quoteArgs(args []string) string {
 
 // Client represents a client connection to a MPD server.
 type Client struct {
-	text *textproto.Conn
+	text    *textproto.Conn
+	version string
 }
 
 // Error represents an error returned by the MPD server.
@@ -105,7 +106,7 @@ func Dial(network, addr string) (c *Client, err error) {
 	if line[0:6] != "OK MPD" {
 		return nil, textproto.ProtocolError("no greeting")
 	}
-	return &Client{text: text}, nil
+	return &Client{text: text, version: line[7:]}, nil
 }
 
 // DialAuthenticated connects to MPD listening on address addr (e.g. "127.0.0.1:6600")
@@ -117,6 +118,11 @@ func DialAuthenticated(network, addr, password string) (c *Client, err error) {
 		err = c.Command("password %s", password).OK()
 	}
 	return c, err
+}
+
+// Version returns the protocol version used as provided during the handshake.
+func (c *Client) Version() string {
+	return c.version
 }
 
 // We are reimplemeting Cmd() and PrintfLine() from textproto here, because
@@ -431,6 +437,32 @@ func (c *Client) PlaylistInfo(start, end int) ([]Attrs, error) {
 		panic("unreachable")
 	}
 	return cmd.AttrsList("file")
+}
+
+// SetPriority set the priority of the specified songs. If end is negative but
+// start is non-negative, it does it for the song at position start. If both
+// start and end are non-negative, it does it for positions in range
+// [start, end).
+func (c *Client) SetPriority(priority, start, end int) error {
+	switch {
+	case start < 0 && end < 0:
+		return errors.New("negative start and end index")
+	case start >= 0 && end >= 0:
+		// Update the prio for this range of playlist items.
+		return c.Command("prio %d %d:%d", priority, start, end).OK()
+	case start >= 0 && end < 0:
+		// Update the prio for a single playlist item at this position.
+		return c.Command("prio %d %d", priority, start).OK()
+	case start < 0 && end >= 0:
+		return errors.New("negative start index")
+	default:
+		panic("unreachable")
+	}
+}
+
+// SetPriorityID sets the prio of the song with the given id.
+func (c *Client) SetPriorityID(priority, id int) error {
+	return c.Command("prioid %d %d", priority, id).OK()
 }
 
 // Delete deletes songs from playlist. If both start and end are positive,
