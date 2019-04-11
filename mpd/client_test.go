@@ -488,8 +488,8 @@ func TestAddIDAndDeleteID(t *testing.T) {
 		return
 	}
 	if err := cli.DeleteID(id1); assert.Error(t, err) {
-		if assert.IsType(t, CommandError{}, err) {
-			assert.Equal(t, ErrorNoExist, err.(CommandError).Code)
+		if assert.IsType(t, Error{}, err) {
+			assert.Equal(t, ErrorNoExist, err.(Error).Code)
 		}
 	}
 	err = cli.DeleteID(id2)

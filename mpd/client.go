@@ -48,31 +48,31 @@ type Client struct {
 	text *textproto.Conn
 }
 
-// CommandError represents an error returned by the MPD server.
+// Error represents an error returned by the MPD server.
 // It contains the error number, the index of the causing command in the command list,
 // the name of the command in the command list and the error message.
-type CommandError struct {
-	Code             CommandErrorCode
+type Error struct {
+	Code             ErrorCode
 	CommandListIndex int
 	CommandName      string
 	Message          string
 }
 
-// CommandErrorCode is the error code of a CommandError.
-type CommandErrorCode int
+// ErrorCode is the error code of a Error.
+type ErrorCode int
 
-// CommandErrorCodes as defined in MPD source (src/protocol/Ack.hxx) version 0.21.7.
+// ErrorCodes as defined in MPD source (src/protocol/Ack.hxx) version 0.21.7.
 const (
-	ErrorNotList CommandErrorCode = iota + 1
+	ErrorNotList ErrorCode = iota + 1
 	ErrorArg
 	ErrorPassword
 	ErrorPermission
 	ErrorUnknown
 )
 
-// CommandErrorCodes as defined in MPD source (src/protocol/Ack.hxx) version 0.21.7.
+// ErrorCodes as defined in MPD source (src/protocol/Ack.hxx) version 0.21.7.
 const (
-	ErrorNoExist CommandErrorCode = iota + 50
+	ErrorNoExist ErrorCode = iota + 50
 	ErrorPlaylistMax
 	ErrorSystem
 	ErrorPlaylistLoad
@@ -81,7 +81,7 @@ const (
 	ErrorExist
 )
 
-func (e CommandError) Error() string {
+func (e Error) Error() string {
 	if e.CommandName != "" {
 		return fmt.Sprintf("command '%s' failed: %s", e.CommandName, e.Message)
 	}
@@ -267,8 +267,8 @@ func (c *Client) readOKLine(terminator string) (err error) {
 			}
 		}
 		msg := strings.TrimSpace(cur)
-		return CommandError{
-			Code:             CommandErrorCode(code),
+		return Error{
+			Code:             ErrorCode(code),
 			CommandListIndex: idx,
 			CommandName:      cmd,
 			Message:          msg,
