@@ -162,7 +162,7 @@ func (cl *CommandList) Random(random bool) {
 	}
 }
 
-// Repeat enables reapeat mode, if repeat is true, disables it otherwise.
+// Repeat enables repeat mode, if repeat is true, disables it otherwise.
 func (cl *CommandList) Repeat(repeat bool) {
 	if repeat {
 		cl.cmdQ.PushBack(&command{"repeat 1", nil, cmdNoReturn})
@@ -193,6 +193,26 @@ func (cl *CommandList) Consume(consume bool) {
 // Playlist related functions
 //
 
+// SetPriority sets the priority for songs in the playlist. If both start and
+// end are non-negative, it updates those at positions in range [start, end).
+// If end is negative, it updates the song at position start.
+func (cl *CommandList) SetPriority(priority, start, end int) error {
+	if start < 0 {
+		return errors.New("negative start index")
+	}
+	if end < 0 {
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("prio %d %d", priority, start), nil, cmdNoReturn})
+	} else {
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("prio %d %d:%d", priority, start, end), nil, cmdNoReturn})
+	}
+	return nil
+}
+
+// SetPriorityID sets the priority for the song identified by id.
+func (cl *CommandList) SetPriorityID(priority, id int) {
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("prioid %d %d", priority, id), nil, cmdNoReturn})
+}
+
 // Delete deletes songs from playlist. If both start and end are positive,
 // it deletes those at positions in range [start, end). If end is negative,
 // it deletes the song at position start.
@@ -203,7 +223,7 @@ func (cl *CommandList) Delete(start, end int) error {
 	if end < 0 {
 		cl.cmdQ.PushBack(&command{fmt.Sprintf("delete %d", start), nil, cmdNoReturn})
 	} else {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("delete %d %d", start, end), nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{fmt.Sprintf("delete %d:%d", start, end), nil, cmdNoReturn})
 	}
 	return nil
 }
