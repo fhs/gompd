@@ -10,17 +10,10 @@ import (
 	"errors"
 	"fmt"
 	"net/textproto"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
-
-var errorRegexp *regexp.Regexp
-
-func init() {
-	errorRegexp = regexp.MustCompile("^ACK( \\[(\\d+)@(\\d+)\\])?( {([^}]*)})? (.*)$")
-}
 
 // Quote quotes strings in the format understood by MPD.
 // See: http://git.musicpd.org/cgit/master/mpd.git/tree/src/util/Tokenizer.cxx
@@ -248,30 +241,40 @@ func (c *Client) readOKLine(terminator string) (err error) {
 	if line == terminator {
 		return nil
 	}
-	match := errorRegexp.FindStringSubmatch(line)
-	if match == nil {
-		return textproto.ProtocolError("unexpected response: " + line)
-	}
-	var code int
-	if rawCode := match[2]; rawCode != "" {
-		code, err = strconv.Atoi(rawCode)
-		if err != nil {
-			return
+	if strings.HasPrefix(line, "ACK ") {
+		cur := line[4:]
+		var code, idx int
+		if strings.HasPrefix(cur, "[") {
+			sep := strings.Index(cur, "@")
+			end := strings.Index(cur, "] ")
+			if sep > 0 && end > 0 {
+				code, err = strconv.Atoi(cur[1:sep])
+				if err != nil {
+					return
+				}
+				idx, err = strconv.Atoi(cur[sep+1 : end])
+				if err != nil {
+					return
+				}
+				cur = cur[end+2:]
+			}
+		}
+		var cmd string
+		if strings.HasPrefix(cur, "{") {
+			if end := strings.Index(cur, "} "); end > 0 {
+				cmd = cur[1:end]
+				cur = cur[end+2:]
+			}
+		}
+		msg := strings.TrimSpace(cur)
+		return CommandError{
+			Code:             CommandErrorCode(code),
+			CommandListIndex: idx,
+			CommandName:      cmd,
+			Message:          msg,
 		}
 	}
-	var index int
-	if rawIndex := match[3]; rawIndex != "" {
-		index, err = strconv.Atoi(rawIndex)
-		if err != nil {
-			return
-		}
-	}
-	return CommandError{
-		Code:             CommandErrorCode(code),
-		CommandListIndex: index,
-		CommandName:      match[5],
-		Message:          match[6],
-	}
+	return textproto.ProtocolError("unexpected response: " + line)
 }
 
 func (c *Client) idle(subsystems ...string) ([]string, error) {
