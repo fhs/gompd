@@ -63,22 +63,22 @@ type CommandErrorCode int
 
 // CommandErrorCodes as defined in MPD source (src/protocol/Ack.hxx) version 0.21.7.
 const (
-	AckErrorNotList CommandErrorCode = iota + 1
-	AckErrorArg
-	AckErrorPassword
-	AckErrorPermission
-	AckErrorUnknown
+	ErrorNotList CommandErrorCode = iota + 1
+	ErrorArg
+	ErrorPassword
+	ErrorPermission
+	ErrorUnknown
 )
 
 // CommandErrorCodes as defined in MPD source (src/protocol/Ack.hxx) version 0.21.7.
 const (
-	AckErrorNoExist CommandErrorCode = iota + 50
-	AckErrorPlaylistMax
-	AckErrorSystem
-	AckErrorPlaylistLoad
-	AckErrorUpdateAlready
-	AckErrorPlayerSync
-	AckErrorExist
+	ErrorNoExist CommandErrorCode = iota + 50
+	ErrorPlaylistMax
+	ErrorSystem
+	ErrorPlaylistLoad
+	ErrorUpdateAlready
+	ErrorPlayerSync
+	ErrorExist
 )
 
 func (e CommandError) Error() string {
