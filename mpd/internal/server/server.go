@@ -20,6 +20,10 @@ import (
 // Attrs is a set of attributes returned by MPD.
 type Attrs map[string]string
 
+const (
+	accErrorNoExist = 50
+)
+
 func unquote(line string, start int) (string, int) {
 	i := start
 	if line[i] != '"' {
@@ -505,7 +509,7 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			}
 		}
 		if !deleted {
-			ackWithCode(50, "No such song")
+			ackWithCode(accErrorNoExist, "No such song")
 			return
 		}
 	case "save":
