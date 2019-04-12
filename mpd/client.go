@@ -62,24 +62,21 @@ type Error struct {
 // ErrorCode is the error code of a Error.
 type ErrorCode int
 
-// ErrorCodes as defined in MPD source (src/protocol/Ack.hxx) version 0.21.7.
+// ErrorCodes as defined in MPD source (https://www.musicpd.org/doc/api/html/Ack_8hxx_source.html)
+// version 0.21.
 const (
-	ErrorNotList ErrorCode = iota + 1
-	ErrorArg
-	ErrorPassword
-	ErrorPermission
-	ErrorUnknown
-)
-
-// ErrorCodes as defined in MPD source (src/protocol/Ack.hxx) version 0.21.7.
-const (
-	ErrorNoExist ErrorCode = iota + 50
-	ErrorPlaylistMax
-	ErrorSystem
-	ErrorPlaylistLoad
-	ErrorUpdateAlready
-	ErrorPlayerSync
-	ErrorExist
+	ErrorNotList       ErrorCode = 1
+	ErrorArg                     = 2
+	ErrorPassword                = 3
+	ErrorPermission              = 4
+	ErrorUnknown                 = 5
+	ErrorNoExist                 = 50
+	ErrorPlaylistMax             = 51
+	ErrorSystem                  = 52
+	ErrorPlaylistLoad            = 53
+	ErrorUpdateAlready           = 54
+	ErrorPlayerSync              = 55
+	ErrorExist                   = 56
 )
 
 func (e Error) Error() string {
