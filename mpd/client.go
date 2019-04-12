@@ -66,17 +66,17 @@ type ErrorCode int
 // version 0.21.
 const (
 	ErrorNotList       ErrorCode = 1
-	ErrorArg                     = 2
-	ErrorPassword                = 3
-	ErrorPermission              = 4
-	ErrorUnknown                 = 5
-	ErrorNoExist                 = 50
-	ErrorPlaylistMax             = 51
-	ErrorSystem                  = 52
-	ErrorPlaylistLoad            = 53
-	ErrorUpdateAlready           = 54
-	ErrorPlayerSync              = 55
-	ErrorExist                   = 56
+	ErrorArg           ErrorCode = 2
+	ErrorPassword      ErrorCode = 3
+	ErrorPermission    ErrorCode = 4
+	ErrorUnknown       ErrorCode = 5
+	ErrorNoExist       ErrorCode = 50
+	ErrorPlaylistMax   ErrorCode = 51
+	ErrorSystem        ErrorCode = 52
+	ErrorPlaylistLoad  ErrorCode = 53
+	ErrorUpdateAlready ErrorCode = 54
+	ErrorPlayerSync    ErrorCode = 55
+	ErrorExist         ErrorCode = 56
 )
 
 func (e Error) Error() string {
