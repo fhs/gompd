@@ -20,6 +20,10 @@ import (
 // Attrs is a set of attributes returned by MPD.
 type Attrs map[string]string
 
+const (
+	accErrorNoExist = 50
+)
+
 func unquote(line string, start int) (string, int) {
 	i := start
 	if line[i] != '"' {
@@ -61,24 +65,33 @@ func parseArgs(line string) (args []string) {
 	return
 }
 
+type playlistEntry struct {
+	song int
+	id   int
+}
+
 type playlist struct {
-	songs []int
+	songs []playlistEntry
+	maxid int
 }
 
 func newPlaylist() *playlist {
-	return &playlist{songs: make([]int, 0)}
+	return &playlist{songs: make([]playlistEntry, 0), maxid: 0}
 }
 
 func (p *playlist) At(i int) int {
-	return p.songs[i]
+	return p.songs[i].song
 }
 
 func (p *playlist) Len() int {
 	return len(p.songs)
 }
 
-func (p *playlist) Add(song int) {
-	p.songs = append(p.songs, song)
+func (p *playlist) Add(song int) int {
+	entry := playlistEntry{song: song, id: p.maxid}
+	p.songs = append(p.songs, entry)
+	p.maxid++
+	return entry.id
 }
 
 func (p *playlist) Delete(i int) {
@@ -191,6 +204,9 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 	}
 	ack := func(format string, a ...interface{}) error {
 		return p.PrintfLine("ACK {"+args[0]+"} "+format, a...)
+	}
+	ackWithCode := func(code int, format string, a ...interface{}) error {
+		return p.PrintfLine(fmt.Sprintf("ACK [%d@0] {%s} %s", code, args[0], format), a...)
 	}
 	switch args[0] {
 	case "close":
@@ -387,6 +403,18 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			return
 		}
 		s.currentPlaylist.Add(i)
+	case "addid":
+		if len(args) < 2 || len(args) > 3 {
+			ack("wrong number of arguments")
+			return
+		}
+		i, ok := s.index[args[1]]
+		if !ok {
+			ack("URI not found")
+			return
+		}
+		id := s.currentPlaylist.Add(i)
+		p.PrintfLine("Id: %d", id)
 	case "prio":
 		if len(args) != 3 {
 			ack("wrong number of arguments")
@@ -461,6 +489,29 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			return
 		}
 		s.currentPlaylist.Delete(i)
+	case "deleteid":
+		if len(args) != 2 {
+			ack("wrong number of arguments")
+			return
+		}
+		id, err := strconv.Atoi(args[1])
+		if err != nil {
+			ack("invalid song ID")
+			return
+		}
+		s.idleEventc <- "playlist"
+		deleted := false
+		for i, song := range s.currentPlaylist.songs {
+			if song.id == id {
+				deleted = true
+				s.currentPlaylist.Delete(i)
+				break
+			}
+		}
+		if !deleted {
+			ackWithCode(accErrorNoExist, "No such song")
+			return
+		}
 	case "save":
 		if len(args) != 2 {
 			ack("wrong number of arguments")

@@ -519,3 +519,43 @@ func TestPriorityID(t *testing.T) {
 		}
 	}
 }
+
+// TODO test adding at position
+// TODO test “addid” failures
+//      - invalid position
+//      - unexpected result (not an ID)
+//      - invalid song
+func TestAddIDAndDeleteID(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	id1, err := cli.AddID("song0042.ogg", -1)
+	if err != nil {
+		t.Fatalf("Client.AddID failed: %s\n", err)
+	}
+	id2, err := cli.AddID("song0042.ogg", -1)
+	if err != nil {
+		t.Fatalf("Client.AddID failed: %s\n", err)
+	}
+	if id1 == id2 {
+		t.Fatalf("Client.AddID returned the same ID twice\n")
+	}
+
+	if err := cli.DeleteID(id1); err != nil {
+		t.Fatalf("Client.DeleteID failed: %s\n", err)
+	}
+	err = cli.DeleteID(id1)
+	if err == nil {
+		t.Fatalf("Client.DeleteID did not fail on second delete of an ID\n")
+	}
+	mpdErr, ok := err.(Error)
+	if !ok {
+		t.Fatalf("Client.DeleteID did not fail with an mpd.Error\n")
+	}
+	if mpdErr.Code != ErrorNoExist {
+		t.Fatalf("Unexpected error code: expected %d, got %d\n", ErrorNoExist, mpdErr.Code)
+	}
+	if err := cli.DeleteID(id2); err != nil {
+		t.Fatalf("Client.DeleteID failed: %s\n", err)
+	}
+}

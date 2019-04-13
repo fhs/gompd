@@ -49,6 +49,43 @@ type Client struct {
 	version string
 }
 
+// Error represents an error returned by the MPD server.
+// It contains the error number, the index of the causing command in the command list,
+// the name of the command in the command list and the error message.
+type Error struct {
+	Code             ErrorCode
+	CommandListIndex int
+	CommandName      string
+	Message          string
+}
+
+// ErrorCode is the error code of a Error.
+type ErrorCode int
+
+// ErrorCodes as defined in MPD source (https://www.musicpd.org/doc/api/html/Ack_8hxx_source.html)
+// version 0.21.
+const (
+	ErrorNotList       ErrorCode = 1
+	ErrorArg           ErrorCode = 2
+	ErrorPassword      ErrorCode = 3
+	ErrorPermission    ErrorCode = 4
+	ErrorUnknown       ErrorCode = 5
+	ErrorNoExist       ErrorCode = 50
+	ErrorPlaylistMax   ErrorCode = 51
+	ErrorSystem        ErrorCode = 52
+	ErrorPlaylistLoad  ErrorCode = 53
+	ErrorUpdateAlready ErrorCode = 54
+	ErrorPlayerSync    ErrorCode = 55
+	ErrorExist         ErrorCode = 56
+)
+
+func (e Error) Error() string {
+	if e.CommandName != "" {
+		return fmt.Sprintf("command '%s' failed: %s", e.CommandName, e.Message)
+	}
+	return e.Message
+}
+
 // Attrs is a set of attributes returned by MPD.
 type Attrs map[string]string
 
@@ -206,6 +243,39 @@ func (c *Client) readOKLine(terminator string) (err error) {
 	}
 	if line == terminator {
 		return nil
+	}
+	if strings.HasPrefix(line, "ACK ") {
+		cur := line[4:]
+		var code, idx int
+		if strings.HasPrefix(cur, "[") {
+			sep := strings.Index(cur, "@")
+			end := strings.Index(cur, "] ")
+			if sep > 0 && end > 0 {
+				code, err = strconv.Atoi(cur[1:sep])
+				if err != nil {
+					return
+				}
+				idx, err = strconv.Atoi(cur[sep+1 : end])
+				if err != nil {
+					return
+				}
+				cur = cur[end+2:]
+			}
+		}
+		var cmd string
+		if strings.HasPrefix(cur, "{") {
+			if end := strings.Index(cur, "} "); end > 0 {
+				cmd = cur[1:end]
+				cur = cur[end+2:]
+			}
+		}
+		msg := strings.TrimSpace(cur)
+		return Error{
+			Code:             ErrorCode(code),
+			CommandListIndex: idx,
+			CommandName:      cmd,
+			Message:          msg,
+		}
 	}
 	return textproto.ProtocolError("unexpected response: " + line)
 }
