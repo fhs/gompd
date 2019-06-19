@@ -17,8 +17,8 @@ import (
 	"strings"
 )
 
-// Attrs is a set of attributes returned by MPD.
-type Attrs map[string]string
+// attrs is a set of attributes returned by MPD.
+type attrs map[string]string
 
 const (
 	accErrorNoExist = 50
@@ -113,45 +113,45 @@ func (p *playlist) Append(q *playlist) {
 	}
 }
 
-type Sticker struct {
+type sticker struct {
 	Name, Value string
 }
 
-func NewSticker(name, value string) *Sticker {
-	return &Sticker{
+func newSticker(name, value string) *sticker {
+	return &sticker{
 		Name:  name,
 		Value: value,
 	}
 }
 
-func (s *Sticker) String() string {
+func (s *sticker) String() string {
 	return s.Name + "=" + s.Value
 }
 
-type Stickers map[string]*Sticker
+type stickers map[string]*sticker
 
-func NewStickers() Stickers {
-	return make(Stickers)
+func newStickers() stickers {
+	return make(stickers)
 }
 
-func (ss Stickers) Set(name, value string) {
+func (ss stickers) Set(name, value string) {
 	if _, ok := ss[name]; !ok {
-		ss[name] = NewSticker(name, value)
+		ss[name] = newSticker(name, value)
 		return
 	}
 	ss[name].Value = value
 }
 
-func (ss Stickers) Get(name string) *Sticker {
+func (ss stickers) Get(name string) *sticker {
 	return ss[name]
 }
 
-func (ss Stickers) Delete(name string) {
+func (ss stickers) Delete(name string) {
 	delete(ss, name)
 }
 
-func (ss Stickers) Sorted() []*Sticker {
-	var v []*Sticker
+func (ss stickers) Sorted() []*sticker {
+	var v []*sticker
 	for _, s := range ss {
 		v = append(v, s)
 	}
@@ -163,11 +163,11 @@ func (ss Stickers) Sorted() []*Sticker {
 
 type server struct {
 	state           string
-	database        []Attrs        // database of songs
+	database        []attrs        // database of songs
 	index           map[string]int // maps URI to database index
 	playlists       map[string]*playlist
 	currentPlaylist *playlist
-	songStickers    map[string]Stickers
+	songStickers    map[string]stickers
 	pos             int // in currentPlaylist
 	idleEventc      chan string
 	idleStartc      chan *idleRequest
@@ -177,9 +177,9 @@ type server struct {
 func newServer() *server {
 	s := &server{
 		state:           "stop",
-		database:        make([]Attrs, 100),
+		database:        make([]attrs, 100),
 		index:           make(map[string]int, 100),
-		songStickers:    make(map[string]Stickers, 100),
+		songStickers:    make(map[string]stickers, 100),
 		playlists:       make(map[string]*playlist),
 		currentPlaylist: newPlaylist(),
 		pos:             0,
@@ -188,11 +188,11 @@ func newServer() *server {
 		idleEndc:        make(chan uint),
 	}
 	for i := 0; i < len(s.database); i++ {
-		s.database[i] = make(Attrs, 5)
+		s.database[i] = make(attrs, 5)
 		filename := fmt.Sprintf("song%04d.ogg", i)
 		s.database[i]["file"] = filename
 		s.index[filename] = i
-		s.songStickers[filename] = NewStickers()
+		s.songStickers[filename] = newStickers()
 	}
 	return s
 }
