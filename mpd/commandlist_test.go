@@ -17,11 +17,11 @@ func TestCurrentSongPromise(t *testing.T) {
 	pa := cmdl.CurrentSong()
 
 	if err := cmdl.End(); err != nil {
-		t.Errorf("CommandList.End failed: %s\n", err)
+		t.Errorf("CommandList.End failed: %s", err)
 	}
 
 	if _, err := pa.Value(); err != nil {
-		t.Errorf("Promise did not compute: %s\n", err)
+		t.Errorf("Promise did not compute: %s", err)
 	}
 
 }
@@ -38,13 +38,13 @@ func TestCommandList(t *testing.T) {
 	cmdl.Next()
 
 	if err := cmdl.End(); err != nil {
-		t.Errorf("CommandList.End failed: %s\n", err)
+		t.Errorf("CommandList.End failed: %s", err)
 	}
 
 	// Test empty command list:
 	cmdl2 := cli.BeginCommandList()
 	if err := cmdl2.End(); err != nil {
-		t.Errorf("CommandList.End failed: %s\n", err)
+		t.Errorf("CommandList.End failed: %s", err)
 	}
 
 	// Reuse old comandlist (should work):
@@ -52,7 +52,7 @@ func TestCommandList(t *testing.T) {
 	cmdl.Previous()
 	cmdl.Previous()
 	if err := cmdl.End(); err != nil {
-		t.Errorf("CommandList.End failed: %s\n", err)
+		t.Errorf("CommandList.End failed: %s", err)
 	}
 
 }

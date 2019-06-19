@@ -258,7 +258,7 @@ func TestVersion(t *testing.T) {
 	defer teardown(cli, t)
 
 	if cli.Version() != "gompd0.1" {
-		t.Errorf("Client.Version failed: %s != gompd0.1\n", cli.Version())
+		t.Errorf("Client.Version failed: %s != gompd0.1", cli.Version())
 	}
 }
 
@@ -267,7 +267,7 @@ func TestPing(t *testing.T) {
 	defer teardown(cli, t)
 
 	if err := cli.Ping(); err != nil {
-		t.Errorf("Client.Ping failed: %s\n", err)
+		t.Errorf("Client.Ping failed: %s", err)
 	}
 }
 
@@ -280,7 +280,7 @@ func TestUpdate(t *testing.T) {
 		t.Fatalf("Client.Update failed: %s\n", err)
 	}
 	if id < 1 {
-		t.Errorf("job id is too small: %d\n", id)
+		t.Errorf("job id is too small: %d", id)
 	}
 }
 
@@ -468,7 +468,7 @@ var quoteTests = []struct {
 func TestQuote(t *testing.T) {
 	for _, test := range quoteTests {
 		if q := quote(test.s); q != test.q {
-			t.Errorf("quote(%s) returned %s; expected %s\n", test.s, q, test.q)
+			t.Errorf("quote(%s) returned %s; expected %s", test.s, q, test.q)
 		}
 	}
 }
@@ -488,10 +488,10 @@ func TestPriority(t *testing.T) {
 		// if tc.ok is true,, err should be nil
 		err := cli.SetPriority(tc.priority, tc.start, tc.end)
 		if err != nil && tc.ok {
-			t.Errorf("Client.SetPriority failed: %s\n", err)
+			t.Errorf("Client.SetPriority failed: %s", err)
 		}
 		if err == nil && !tc.ok {
-			t.Errorf("Client.SetPriority succeeded when it should fail\n")
+			t.Errorf("Client.SetPriority succeeded when it should fail")
 		}
 	}
 }
@@ -512,10 +512,10 @@ func TestPriorityID(t *testing.T) {
 		// if tc.ok is true,, err should be nil
 		err := cli.SetPriorityID(tc.priority, tc.id)
 		if err != nil && tc.ok {
-			t.Errorf("Client.SetPriorityID failed: %s\n", err)
+			t.Errorf("Client.SetPriorityID failed: %s", err)
 		}
 		if err == nil && !tc.ok {
-			t.Errorf("Client.SetPriorityID succeeded when it should fail\n")
+			t.Errorf("Client.SetPriorityID succeeded when it should fail")
 		}
 	}
 }
