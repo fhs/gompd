@@ -42,7 +42,7 @@ func (cmd *Command) String() string {
 
 // OK sends command to server and checks for error.
 func (cmd *Command) OK() error {
-	id, err := cmd.client.cmd(cmd.cmd)
+	id, err := cmd.client.cmd("%v", cmd.cmd)
 	if err != nil {
 		return err
 	}
