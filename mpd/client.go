@@ -160,7 +160,7 @@ func (c *Client) readList(key string) (list []string, err error) {
 	list = []string{}
 	key += ": "
 	for {
-		line, err := c.text.ReadLine()
+		line, err := c.readLine()
 		if err != nil {
 			return nil, err
 		}
@@ -175,11 +175,52 @@ func (c *Client) readList(key string) (list []string, err error) {
 	return
 }
 
+func (c *Client) readLine() (string, error) {
+	line, err := c.text.ReadLine()
+	if err != nil {
+		return "", err
+	}
+	if strings.HasPrefix(line, "ACK ") {
+		cur := line[4:]
+		var code, idx int
+		if strings.HasPrefix(cur, "[") {
+			sep := strings.Index(cur, "@")
+			end := strings.Index(cur, "] ")
+			if sep > 0 && end > 0 {
+				code, err = strconv.Atoi(cur[1:sep])
+				if err != nil {
+					return "", err
+				}
+				idx, err = strconv.Atoi(cur[sep+1 : end])
+				if err != nil {
+					return "", err
+				}
+				cur = cur[end+2:]
+			}
+		}
+		var cmd string
+		if strings.HasPrefix(cur, "{") {
+			if end := strings.Index(cur, "} "); end > 0 {
+				cmd = cur[1:end]
+				cur = cur[end+2:]
+			}
+		}
+		msg := strings.TrimSpace(cur)
+		return "", Error{
+			Code:             ErrorCode(code),
+			CommandListIndex: idx,
+			CommandName:      cmd,
+			Message:          msg,
+		}
+	}
+	return line, nil
+}
+
 func (c *Client) readAttrsList(startKey string) (attrs []Attrs, err error) {
 	attrs = []Attrs{}
 	startKey += ": "
 	for {
-		line, err := c.text.ReadLine()
+		line, err := c.readLine()
 		if err != nil {
 			return nil, err
 		}
@@ -204,7 +245,7 @@ func (c *Client) readAttrsList(startKey string) (attrs []Attrs, err error) {
 func (c *Client) readAttrs(terminator string) (attrs Attrs, err error) {
 	attrs = make(Attrs)
 	for {
-		line, err := c.text.ReadLine()
+		line, err := c.readLine()
 		if err != nil {
 			return nil, err
 		}
@@ -237,45 +278,12 @@ func (c *Client) Stats() (Attrs, error) {
 }
 
 func (c *Client) readOKLine(terminator string) (err error) {
-	line, err := c.text.ReadLine()
+	line, err := c.readLine()
 	if err != nil {
 		return
 	}
 	if line == terminator {
 		return nil
-	}
-	if strings.HasPrefix(line, "ACK ") {
-		cur := line[4:]
-		var code, idx int
-		if strings.HasPrefix(cur, "[") {
-			sep := strings.Index(cur, "@")
-			end := strings.Index(cur, "] ")
-			if sep > 0 && end > 0 {
-				code, err = strconv.Atoi(cur[1:sep])
-				if err != nil {
-					return
-				}
-				idx, err = strconv.Atoi(cur[sep+1 : end])
-				if err != nil {
-					return
-				}
-				cur = cur[end+2:]
-			}
-		}
-		var cmd string
-		if strings.HasPrefix(cur, "{") {
-			if end := strings.Index(cur, "} "); end > 0 {
-				cmd = cur[1:end]
-				cur = cur[end+2:]
-			}
-		}
-		msg := strings.TrimSpace(cur)
-		return Error{
-			Code:             ErrorCode(code),
-			CommandListIndex: idx,
-			CommandName:      cmd,
-			Message:          msg,
-		}
 	}
 	return textproto.ProtocolError("unexpected response: " + line)
 }
@@ -558,7 +566,7 @@ func (c *Client) Update(uri string) (jobID int, err error) {
 	c.text.StartResponse(id)
 	defer c.text.EndResponse(id)
 
-	line, err := c.text.ReadLine()
+	line, err := c.readLine()
 	if err != nil {
 		return
 	}
@@ -586,7 +594,7 @@ func (c *Client) ListAllInfo(uri string) ([]Attrs, error) {
 	attrs := []Attrs{}
 	inEntry := false
 	for {
-		line, err := c.text.ReadLine()
+		line, err := c.readLine()
 		if err != nil {
 			return nil, err
 		}
@@ -620,7 +628,7 @@ func (c *Client) ListInfo(uri string) ([]Attrs, error) {
 	defer c.text.EndResponse(id)
 	attrs := []Attrs{}
 	for {
-		line, err := c.text.ReadLine()
+		line, err := c.readLine()
 		if err != nil {
 			return nil, err
 		}
@@ -676,7 +684,7 @@ func (c *Client) List(args ...string) ([]string, error) {
 
 	var ret []string
 	for {
-		line, err := c.text.ReadLine()
+		line, err := c.readLine()
 		if err != nil {
 			return nil, err
 		}
