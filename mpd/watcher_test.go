@@ -39,6 +39,8 @@ func loadTestFiles(t *testing.T, cli *Client, n int) (ok bool) {
 }
 
 func TestWatcher(t *testing.T) {
+	t.Skipf("skipping racy test. See https://github.com/fhs/gompd/issues/52")
+
 	c := localDial(t)
 	defer teardown(c, t)
 	if !loadTestFiles(t, c, 10) {
