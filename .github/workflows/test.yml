@@ -1,0 +1,40 @@
+on: [push, pull_request]
+name: Test
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        go-version: [1.13.x, 1.14.x]
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.platform }}
+    env:
+      GO111MODULE: on
+
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Go environment
+      run: |
+        go version
+        go env
+        echo PATH is $PATH
+      shell: bash
+
+    - name: Checkout code
+      uses: actions/checkout@v1
+
+    - name: Check gofmt
+      run: |
+        gofmt -l .
+        test `gofmt -l . | wc -l` = 0
+      shell: bash
+
+    - name: Run tests
+      run: |
+        go test -race -v ./...
+      shell: bash
