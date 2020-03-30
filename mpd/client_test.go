@@ -124,7 +124,7 @@ func TestListInfo(t *testing.T) {
 
 	fileCount, dirCount, plsCount := 0, 0, 0
 
-	ls, err := cli.ListInfo("")
+	ls, err := cli.ListInfo("foo")
 	if err != nil {
 		t.Fatalf(`Client.ListInfo("") = %v, %s need _, nil`, ls, err)
 	}
@@ -275,7 +275,7 @@ func TestUpdate(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
 
-	id, err := cli.Update("")
+	id, err := cli.Update("foo")
 	if err != nil {
 		t.Fatalf("Client.Update failed: %s\n", err)
 	}
@@ -557,5 +557,30 @@ func TestAddIDAndDeleteID(t *testing.T) {
 	}
 	if err := cli.DeleteID(id2); err != nil {
 		t.Fatalf("Client.DeleteID failed: %s\n", err)
+	}
+}
+
+func TestResponseErrorHandling(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	for name, fn := range map[string]func() error{
+		// “list” requires an argument
+		"in readList":      func() error { _, err := cli.Command("list").Strings("file"); return err },
+		"in readAttrsList": func() error { _, err := cli.PlaylistContents("does_not_exist"); return err },
+		"in readAttrs":     func() error { _, err := cli.ReadComments(""); return err },
+		"in readOKLine":    func() error { return cli.DeleteID(123) },
+		"in Update":        func() error { _, err := cli.Update(""); return err },
+		"in ListAllInfo":   func() error { _, err := cli.ListAllInfo(""); return err },
+		"in ListInfo":      func() error { _, err := cli.ListInfo(""); return err },
+		"in List":          func() error { _, err := cli.List(""); return err },
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := fn(); err == nil {
+				t.Errorf("did not fail on MPD error response")
+			} else if _, ok := err.(Error); !ok {
+				t.Errorf("did not fail with an mpd.Error")
+			}
+		})
 	}
 }

@@ -213,7 +213,7 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 		closed = true
 		return
 	case "list":
-		if len(args) < 2 {
+		if len(args) < 2 || args[1] == "" {
 			ack("too few arguments")
 			return
 		}
@@ -222,7 +222,17 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 				p.PrintfLine("file: %s", a["file"])
 			}
 		}
+	case "listallinfo":
+		if len(args) < 2 || args[1] == "" {
+			ack("too few arguments")
+			return
+		}
+		p.PrintfLine("OK")
 	case "lsinfo":
+		if len(args) < 2 || args[1] == "" {
+			ack("too few arguments")
+			return
+		}
 		for _, a := range s.database {
 			p.PrintfLine("file: %s", a["file"])
 			p.PrintfLine("Last-Modified: 2014-07-02T12:32:26Z")
@@ -238,7 +248,7 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 		}
 		p.PrintfLine("playlist: BBC 6 Music.m3u")
 	case "readcomments":
-		if len(args) < 2 {
+		if len(args) < 2 || args[1] == "" {
 			ack("too few arguments")
 			return
 		}
@@ -554,6 +564,10 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 		state := s.state
 		p.PrintfLine("state: %s", state)
 	case "update":
+		if len(args) < 2 || args[1] == "" {
+			ack("too few arguments")
+			return
+		}
 		p.PrintfLine("updating_db: 1")
 	case "ping":
 	case "currentsong":
