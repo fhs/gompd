@@ -564,76 +564,23 @@ func TestResponseErrorHandling(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
 
-	// error handling in readList (list requires an argument)
-	{
-		_, err := cli.Command("list").Strings("file")
-		if err == nil {
-			t.Errorf("client.readList did not fail on MPD error response")
-		} else if _, ok := err.(Error); !ok {
-			t.Errorf("Client.readList did not fail with an mpd.Error")
-		}
-	}
-	// error handling in readAttrsList via PlaylistContents
-	{
-		_, err := cli.PlaylistContents("does_not_exist")
-		if err == nil {
-			t.Errorf("client.readAttrsList did not fail on MPD error response")
-		} else if _, ok := err.(Error); !ok {
-			t.Errorf("Client.readAttrsList did not fail with an mpd.Error")
-		}
-	}
-	// error handling in readAttrs via ReadComments
-	{
-		_, err := cli.ReadComments("")
-		if err == nil {
-			t.Errorf("client.readAttrs did not fail on MPD error response")
-		} else if _, ok := err.(Error); !ok {
-			t.Errorf("Client.readAttrs did not fail with an mpd.Error")
-		}
-	}
-	// error handling in readOKLine via DeleteID
-	{
-		err := cli.DeleteID(123)
-		if err == nil {
-			t.Errorf("client.readOKLine did not fail on MPD error response")
-		} else if _, ok := err.(Error); !ok {
-			t.Errorf("Client.readOKLine did not fail with an mpd.Error")
-		}
-	}
-	// error handling in Update (requires an argument)
-	{
-		_, err := cli.Update("")
-		if err == nil {
-			t.Errorf("client.Update did not fail on MPD error response")
-		} else if _, ok := err.(Error); !ok {
-			t.Errorf("Client.Update did not fail with an mpd.Error")
-		}
-	}
-	// error handling in ListAllInfo (requires an argument)
-	{
-		_, err := cli.ListAllInfo("")
-		if err == nil {
-			t.Errorf("client.ListAllInfo did not fail on MPD error response")
-		} else if _, ok := err.(Error); !ok {
-			t.Errorf("Client.ListAllInfo did not fail with an mpd.Error")
-		}
-	}
-	// error handling in ListInfo (requires an argument)
-	{
-		_, err := cli.ListInfo("")
-		if err == nil {
-			t.Errorf("client.ListInfo did not fail on MPD error response")
-		} else if _, ok := err.(Error); !ok {
-			t.Errorf("Client.ListInfo did not fail with an mpd.Error")
-		}
-	}
-	// error handling in List (requires an argument)
-	{
-		_, err := cli.List("")
-		if err == nil {
-			t.Errorf("client.List did not fail on MPD error response")
-		} else if _, ok := err.(Error); !ok {
-			t.Errorf("Client.List did not fail with an mpd.Error")
-		}
+	for name, fn := range map[string]func() error{
+		// “list” requires an argument
+		"in readList":      func() error { _, err := cli.Command("list").Strings("file"); return err },
+		"in readAttrsList": func() error { _, err := cli.PlaylistContents("does_not_exist"); return err },
+		"in readAttrs":     func() error { _, err := cli.ReadComments(""); return err },
+		"in readOKLine":    func() error { return cli.DeleteID(123) },
+		"in Update":        func() error { _, err := cli.Update(""); return err },
+		"in ListAllInfo":   func() error { _, err := cli.ListAllInfo(""); return err },
+		"in ListInfo":      func() error { _, err := cli.ListInfo(""); return err },
+		"in List":          func() error { _, err := cli.List(""); return err },
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := fn(); err == nil {
+				t.Errorf("did not fail on MPD error response")
+			} else if _, ok := err.(Error); !ok {
+				t.Errorf("did not fail with an mpd.Error")
+			}
+		})
 	}
 }
