@@ -284,6 +284,19 @@ func TestUpdate(t *testing.T) {
 	}
 }
 
+func TestRescan(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+
+	id, err := cli.Rescan("foo")
+	if err != nil {
+		t.Fatalf("Client.Rescan failed: %s\n", err)
+	}
+	if id < 1 {
+		t.Errorf("job id is too small: %d", id)
+	}
+}
+
 func TestListOutputs(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)

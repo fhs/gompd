@@ -580,6 +580,33 @@ func (c *Client) Update(uri string) (jobID int, err error) {
 	return jobID, c.readOKLine("OK")
 }
 
+// Rescan updates MPD's database like Update, but it also rescans unmodified
+// files. uri is a particular directory or file to update. If it is an empty
+// string, everything is updated.
+//
+// The returned jobID identifies the update job, enqueued by MPD.
+func (c *Client) Rescan(uri string) (jobID int, err error) {
+	id, err := c.cmd("rescan %s", quote(uri))
+	if err != nil {
+		return
+	}
+	c.text.StartResponse(id)
+	defer c.text.EndResponse(id)
+
+	line, err := c.readLine()
+	if err != nil {
+		return
+	}
+	if !strings.HasPrefix(line, "updating_db: ") {
+		return 0, textproto.ProtocolError("unexpected response: " + line)
+	}
+	jobID, err = strconv.Atoi(line[13:])
+	if err != nil {
+		return
+	}
+	return jobID, c.readOKLine("OK")
+}
+
 // ListAllInfo returns attributes for songs in the library. Information about
 // any song that is either inside or matches the passed in uri is returned.
 // To get information about every song in the library, pass in "/".
