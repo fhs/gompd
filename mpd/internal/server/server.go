@@ -563,7 +563,7 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 	case "status":
 		state := s.state
 		p.PrintfLine("state: %s", state)
-	case "update":
+	case "update", "rescan":
 		if len(args) < 2 || args[1] == "" {
 			ack("too few arguments")
 			return
