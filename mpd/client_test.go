@@ -470,19 +470,34 @@ func attrsListEqualKey(a, b []Attrs, key string) bool {
 	return true
 }
 
-var quoteTests = []struct {
-	s, q string
-}{
-	{`test.ogg`, `"test.ogg"`},
-	{`test "song".ogg`, `"test \"song\".ogg"`},
-	{`04 - ILL - DECAYED LOVE　feat.℃iel.ogg`, `"04 - ILL - DECAYED LOVE　feat.℃iel.ogg"`},
+func TestQuote(t *testing.T) {
+	// Tests we want to run
+	var quoteTests = []struct {
+		source, expected string
+	}{
+		{`test.ogg`, `"test.ogg"`},
+		{`test "song".ogg`, `"test \"song\".ogg"`},
+		{`test with 'single' and "double" quotes`, `"test with \\'single\\' and \"double\" quotes"`},
+		{`04 - ILL - DECAYED LOVE　feat.℃iel.ogg`, `"04 - ILL - DECAYED LOVE　feat.℃iel.ogg"`},
+		// Test case provided at https://www.musicpd.org/doc/html/protocol.html#escaping-string-values.
+		// NB: it deviates from the original case in that the single quote is left unescaped because the escaping is
+		// done by quote(). With this approach, the user should only take care of backslash-escaping double quotes
+		// inside a double-quoted literal.
+		{`(Artist == "foo'bar\"")`, `"(Artist == \"foo\\'bar\\\"\")"`},
+	}
+	// Run tests
+	for _, test := range quoteTests {
+		if q := quote(test.source); q != test.expected {
+			t.Errorf("quote(%s) returned %s; expected %s", test.source, q, test.expected)
+		}
+	}
 }
 
-func TestQuote(t *testing.T) {
-	for _, test := range quoteTests {
-		if q := quote(test.s); q != test.q {
-			t.Errorf("quote(%s) returned %s; expected %s", test.s, q, test.q)
-		}
+func TestQuoteArgs(t *testing.T) {
+	input := []string{`Artist`, `Nightingale`, `Title`, `\"Don't Go Away\"`}
+	expected := `"Artist" "Nightingale" "Title" "\\\"Don\\'t Go Away\\\""`
+	if got := quoteArgs(input); got != expected {
+		t.Errorf("quoteArgs(%v) returned %s; expected %s", input, got, expected)
 	}
 }
 
