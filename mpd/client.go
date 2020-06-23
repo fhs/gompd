@@ -16,25 +16,34 @@ import (
 )
 
 // Quote quotes strings in the format understood by MPD.
-// See: http://git.musicpd.org/cgit/master/mpd.git/tree/src/util/Tokenizer.cxx
+// See: https://github.com/MusicPlayerDaemon/MPD/blob/master/src/util/Tokenizer.cxx
+// NB1: double quotes inside double-quoted literals must be escaped by the caller.
+// NB2: this will probably fail should you need to use single quotes outside of double-quoted literal.
 func quote(s string) string {
 	q := make([]byte, 2+2*len(s))
 	i := 0
 	q[i], i = '"', i+1
 	for _, c := range []byte(s) {
-		if c == '"' {
-			q[i], i = '\\', i+1
-			q[i], i = '"', i+1
-		} else {
-			q[i], i = c, i+1
+		// We need to quote single/double quotes and backslash
+		if c == '"' || c == '\\' || c == '\'' {
+			// Prepend the char with a backslash
+			q[i] = '\\'
+			i++
+			// For single quotes the backslash must be doubled
+			if c == '\'' {
+				q[i] = '\\'
+				i++
+			}
 		}
+		q[i] = c
+		i++
 	}
 	q[i], i = '"', i+1
 	return string(q[:i])
 }
 
 // Quote quotes each string of args in the format understood by MPD.
-// See: http://git.musicpd.org/cgit/master/mpd.git/tree/src/util/Tokenizer.cxx
+// See: https://github.com/MusicPlayerDaemon/MPD/blob/master/src/util/Tokenizer.cxx
 func quoteArgs(args []string) string {
 	quoted := make([]string, len(args))
 	for index, arg := range args {
