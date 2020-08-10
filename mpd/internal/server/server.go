@@ -169,6 +169,7 @@ type server struct {
 	currentPlaylist *playlist
 	songStickers    map[string]stickers
 	pos             int // in currentPlaylist
+	artwork         []byte
 	idleEventc      chan string
 	idleStartc      chan *idleRequest
 	idleEndc        chan uint
@@ -183,6 +184,7 @@ func newServer() *server {
 		playlists:       make(map[string]*playlist),
 		currentPlaylist: newPlaylist(),
 		pos:             0,
+		artwork:         []byte{0x01, 0x02, 0x03, 0x04, 0x05},
 		idleEventc:      make(chan string),
 		idleStartc:      make(chan *idleRequest),
 		idleEndc:        make(chan uint),
@@ -195,6 +197,17 @@ func newServer() *server {
 		s.songStickers[filename] = newStickers()
 	}
 	return s
+}
+
+func writeBinaryChunk(p *textproto.Conn, data []byte, offset, length int) {
+	p.PrintfLine("size: %d", len(data))
+	if offset+length > len(data) {
+		length = len(data) - offset
+	}
+	p.PrintfLine("binary: %d", length)
+	// Can't use p.PrintfLine() for writing bytes since it'd terminate the data with \r\n instead of just \n
+	p.W.Write(data[offset : offset+length])
+	p.W.WriteByte('\n')
 }
 
 func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) (cmdOk, closed bool) {
@@ -578,6 +591,34 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			s.pos = 0
 		}
 		p.PrintfLine("file: %s", s.database[s.currentPlaylist.At(s.pos)]["file"])
+	case "albumart":
+		if len(args) < 2 || len(args) > 3 {
+			ack("wrong number of arguments")
+			return
+		}
+		artLen, offset := len(s.artwork), 0
+		var err error
+		if len(args) == 3 {
+			if offset, err = strconv.Atoi(args[2]); err != nil {
+				ack("invalid offset value: %v", err)
+				return
+			} else if offset >= artLen {
+				ack("offset beyond end of file")
+				return
+			}
+		}
+
+		switch args[1] {
+		case "/file/with/small-artwork":
+			// Give away the entire "file" at once
+			writeBinaryChunk(p, s.artwork, offset, len(s.artwork))
+		case "/file/with/huge-artwork":
+			// Give away the "file" 3 bytes at a time
+			writeBinaryChunk(p, s.artwork, offset, 3)
+		default:
+			ack("no artwork found")
+		}
+
 	case "outputs":
 		p.PrintfLine("outputid: 0")
 		p.PrintfLine("outputenabled: 1")

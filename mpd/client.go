@@ -9,6 +9,7 @@ package mpd
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/textproto"
 	"strconv"
 	"strings"
@@ -225,6 +226,24 @@ func (c *Client) readLine() (string, error) {
 	return line, nil
 }
 
+func (c *Client) readBytes(length int) ([]byte, error) {
+	// Read the entire chunk of data. ReadFull() makes sure the data length matches the expectation
+	data := make([]byte, length)
+	if _, err := io.ReadFull(c.text.R, data); err != nil {
+		return nil, err
+	}
+
+	// Verify there's a linebreak afterwards and skip it
+	termByte, err := c.text.R.ReadByte()
+	if err != nil {
+		return nil, textproto.ProtocolError("failed to read binary data terminator: " + err.Error())
+	}
+	if termByte != '\n' {
+		return nil, textproto.ProtocolError(fmt.Sprintf("wrong binary data terminator: want 0x0a, got %x", termByte))
+	}
+	return data, nil
+}
+
 func (c *Client) readAttrsList(startKey string) (attrs []Attrs, err error) {
 	attrs = []Attrs{}
 	startKey += ": "
@@ -269,6 +288,53 @@ func (c *Client) readAttrs(terminator string) (attrs Attrs, err error) {
 		attrs[key] = line[z+2:]
 	}
 	return
+}
+
+func (c *Client) readBinary() ([]byte, int, error) {
+	size := -1
+	for {
+		line, err := c.readLine()
+		switch {
+		case err != nil:
+			return nil, 0, err
+
+		// Check for the size key
+		case strings.HasPrefix(line, "size: "):
+			if size, err = strconv.Atoi(line[6:]); err != nil {
+				return nil, 0, textproto.ProtocolError("failed to parse size: " + err.Error())
+			}
+
+		// Check for the binary key
+		case strings.HasPrefix(line, "binary: "):
+			length := -1
+			if length, err = strconv.Atoi(line[8:]); err != nil {
+				return nil, 0, textproto.ProtocolError("failed to parse binary: " + err.Error())
+			}
+
+			// If no size is given, assume it's equal to the provided data's length
+			if size < 0 {
+				size = length
+			}
+
+			// The binary data must follow the 'binary:' key
+			data, err := c.readBytes(length)
+			if err != nil {
+				return nil, 0, err
+			}
+
+			// The binary data must be followed by the "OK" line
+			if s, err := c.readLine(); err != nil {
+				return nil, 0, err
+			} else if s != "OK" {
+				return nil, 0, textproto.ProtocolError("expected 'OK', got " + s)
+			}
+			return data, size, nil
+
+		// No more data. Obviously, no binary data encountered
+		case line == "", line == "OK":
+			return nil, 0, textproto.ProtocolError("no binary data found in response")
+		}
+	}
 }
 
 // CurrentSong returns information about the current song in the playlist.
@@ -912,4 +978,25 @@ func (c *Client) StickerList(uri string) ([]Sticker, error) {
 // StickerSet sets sticker value for the song with given URI.
 func (c *Client) StickerSet(uri string, name string, value string) error {
 	return c.Command("sticker set song %s %s %s", uri, name, value).OK()
+}
+
+// AlbumArt retrieves an album artwork image for a song with the given URI using MPD's albumart command.
+func (c *Client) AlbumArt(uri string) ([]byte, error) {
+	offset := 0
+	var data []byte
+	for {
+		// Read the data in chunks
+		chunk, size, err := c.Command("albumart %s %d", uri, offset).Binary()
+		if err != nil {
+			return nil, err
+		}
+
+		// Accumulate the data
+		data = append(data, chunk...)
+		offset = len(data)
+		if offset >= size {
+			break
+		}
+	}
+	return data, nil
 }
