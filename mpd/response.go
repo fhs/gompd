@@ -85,3 +85,15 @@ func (cmd *Command) Strings(key string) ([]string, error) {
 	defer cmd.client.text.EndResponse(id)
 	return cmd.client.readList(key)
 }
+
+// Binary sends command to server and reads its binary response, returning the data and its total size (which can be
+// greater than the returned chunk).
+func (cmd *Command) Binary() ([]byte, int, error) {
+	id, err := cmd.client.cmd(cmd.cmd)
+	if err != nil {
+		return nil, 0, err
+	}
+	cmd.client.text.StartResponse(id)
+	defer cmd.client.text.EndResponse(id)
+	return cmd.client.readBinary()
+}

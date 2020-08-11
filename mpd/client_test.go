@@ -6,6 +6,7 @@ package mpd
 
 import (
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/fhs/gompd/v2/mpd/internal/server"
@@ -608,6 +609,31 @@ func TestResponseErrorHandling(t *testing.T) {
 				t.Errorf("did not fail on MPD error response")
 			} else if _, ok := err.(Error); !ok {
 				t.Errorf("did not fail with an mpd.Error")
+			}
+		})
+	}
+}
+
+func TestAlbumArt(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+	tests := []struct {
+		name    string
+		uri     string
+		want    []byte
+		wantErr bool
+	}{
+		{"artwork as a whole", "/file/with/small-artwork", []byte{0x01, 0x02, 0x03, 0x04, 0x05}, false},
+		{"artwork in chunks", "/file/with/huge-artwork", []byte{0x01, 0x02, 0x03, 0x04, 0x05}, false},
+		{"nonexistent artwork", "some_wrong_file", nil, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := cli.AlbumArt(tt.uri)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AlbumArt() error = %v, wantErr %v", err, tt.wantErr)
+			} else if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("AlbumArt() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

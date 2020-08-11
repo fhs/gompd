@@ -1,3 +1,7 @@
 # VIM
 *.swp
 *.swo
+
+# Idea
+/.idea/
+*.iml
