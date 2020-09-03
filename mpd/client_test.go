@@ -478,13 +478,14 @@ func TestQuote(t *testing.T) {
 	}{
 		{`test.ogg`, `"test.ogg"`},
 		{`test "song".ogg`, `"test \"song\".ogg"`},
-		{`test with 'single' and "double" quotes`, `"test with \\'single\\' and \"double\" quotes"`},
+		{`test with 'single' and "double" quotes`, `"test with \'single\' and \"double\" quotes"`},
+		{`escape \"escaped\"`, `"escape \\\"escaped\\\""`},
+		{`just a \`, `"just a \\"`},
 		{`04 - ILL - DECAYED LOVE　feat.℃iel.ogg`, `"04 - ILL - DECAYED LOVE　feat.℃iel.ogg"`},
 		// Test case provided at https://www.musicpd.org/doc/html/protocol.html#escaping-string-values.
-		// NB: it deviates from the original case in that the single quote is left unescaped because the escaping is
-		// done by quote(). With this approach, the user should only take care of backslash-escaping double quotes
-		// inside a double-quoted literal.
-		{`(Artist == "foo'bar\"")`, `"(Artist == \"foo\\'bar\\\"\")"`},
+		// NB: we don't support quoting in the "protocol level" mode, hence single quotes get the same treatment as
+		// double quotes and there are 3 backslashes before the single quote, too.
+		{`(Artist == "foo\'bar\"")`, `"(Artist == \"foo\\\'bar\\\"\")"`},
 	}
 	// Run tests
 	for _, test := range quoteTests {
@@ -495,8 +496,8 @@ func TestQuote(t *testing.T) {
 }
 
 func TestQuoteArgs(t *testing.T) {
-	input := []string{`Artist`, `Nightingale`, `Title`, `\"Don't Go Away\"`}
-	expected := `"Artist" "Nightingale" "Title" "\\\"Don\\'t Go Away\\\""`
+	input := []string{`Artist`, `Nightingale`, `Title`, `"Don't Go Away"`}
+	expected := `"Artist" "Nightingale" "Title" "\"Don\'t Go Away\""`
 	if got := quoteArgs(input); got != expected {
 		t.Errorf("quoteArgs(%v) returned %s; expected %s", input, got, expected)
 	}

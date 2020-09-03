@@ -16,25 +16,19 @@ import (
 	"time"
 )
 
-// Quote quotes strings in the format understood by MPD.
+// Quote quotes string VALUES in the format understood by MPD.
 // See: https://github.com/MusicPlayerDaemon/MPD/blob/master/src/util/Tokenizer.cxx
-// NB1: double quotes inside double-quoted literals must be escaped by the caller.
-// NB2: this will probably fail should you need to use single quotes outside of double-quoted literal.
+// NB: this function shouldn't be used on the PROTOCOL LEVEL because it considers single quotes special chars and
+// escapes them.
 func quote(s string) string {
 	q := make([]byte, 2+2*len(s))
 	i := 0
 	q[i], i = '"', i+1
 	for _, c := range []byte(s) {
-		// We need to quote single/double quotes and backslash
+		// We need to escape single/double quotes and a backslash by prepending them with a '\'
 		if c == '"' || c == '\\' || c == '\'' {
-			// Prepend the char with a backslash
 			q[i] = '\\'
 			i++
-			// For single quotes the backslash must be doubled
-			if c == '\'' {
-				q[i] = '\\'
-				i++
-			}
 		}
 		q[i] = c
 		i++
