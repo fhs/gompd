@@ -220,7 +220,7 @@ func TestListOutputs(t *testing.T) {
 		}
 		for k, v := range expected[i] {
 			if outputs[i][k] != v {
-				t.Errorf(`Expected property %o for key "%s", got %o`, v, k, outputs[i][k])
+				t.Errorf(`Expected property %v for key "%v", got %v`, v, k, outputs[i][k])
 			}
 		}
 	}

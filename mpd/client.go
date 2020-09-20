@@ -73,7 +73,7 @@ func DialAuthenticated(network, addr, password string) (c *Client, err error) {
 
 // We are reimplemeting Cmd() and PrintfLine() from textproto here, because
 // the original functions append CR-LF to the end of commands. This behavior
-// voilates the MPD protocol: Commands must be terminated by '\n'.
+// violates the MPD protocol: Commands must be terminated by '\n'.
 func (c *Client) cmd(format string, args ...interface{}) (uint, error) {
 	id := c.text.Next()
 	c.text.StartRequest(id)
@@ -406,8 +406,9 @@ func (c *Client) AddId(uri string, pos int) (int, error) {
 	var err error
 	if pos >= 0 {
 		id, err = c.cmd("addid %s %d", quote(uri), pos)
+	} else {
+		id, err = c.cmd("addid %s", quote(uri))
 	}
-	id, err = c.cmd("addid %s", quote(uri))
 	if err != nil {
 		return -1, err
 	}
@@ -431,7 +432,7 @@ func (c *Client) Clear() error {
 	return c.okCmd("clear")
 }
 
-// Shuffle shuffles the tracks from postion start to position end in the
+// Shuffle shuffles the tracks from position start to position end in the
 // current playlist. If start or end is negative, the whole playlist is
 // shuffled.
 func (c *Client) Shuffle(start, end int) error {
