@@ -1,7 +1,0 @@
-language: go
-go_import_path: github.com/fhs/gompd
-
-script:
- - go install -v ./...
- - test `gofmt -l . | wc -l` = 0
- - go test -v ./...

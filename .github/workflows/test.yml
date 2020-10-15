@@ -5,7 +5,7 @@ jobs:
   test:
     strategy:
       matrix:
-        go-version: [1.13.x, 1.14.x]
+        go-version: [1.14.x, 1.15.x]
         platform: [ubuntu-latest, macos-latest, windows-latest]
       fail-fast: false
     runs-on: ${{ matrix.platform }}
@@ -14,7 +14,7 @@ jobs:
 
     steps:
     - name: Install Go
-      uses: actions/setup-go@v1
+      uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
 
@@ -26,7 +26,10 @@ jobs:
       shell: bash
 
     - name: Checkout code
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
+
+    - name: Run tests
+      run: go test -race -v ./...
 
     - name: Check gofmt
       run: |
@@ -34,7 +37,3 @@ jobs:
         test `gofmt -l . | wc -l` = 0
       shell: bash
 
-    - name: Run tests
-      run: |
-        go test -race -v ./...
-      shell: bash
