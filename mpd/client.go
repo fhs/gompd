@@ -797,6 +797,33 @@ func (c *Client) List(args ...string) ([]string, error) {
 	return ret, nil
 }
 
+//Partition commands
+
+// Partition Switches the client to a different partition.
+func (c *Client) Partition(name string) error {
+	return c.Command("partition %s", name).OK()
+}
+
+// ListPartitions Print a list of partitions and their information.
+func (c *Client) ListPartitions() ([]Attrs, error) {
+	return c.Command("listpartitions").AttrsList("partition")
+}
+
+// NewPartition creates a new partition with the given name.
+func (c *Client) NewPartition(name string) error {
+	return c.Command("newpartition %s", name).OK()
+}
+
+// DelPartition deletes partition with the given name.
+func (c *Client) DelPartition(name string) error {
+	return c.Command("delpartition %s", name).OK()
+}
+
+// MoveOutput Move an output with the given name to the current partition.
+func (c *Client) MoveOutput(name string) error {
+	return c.Command("moveoutput %s", name).OK()
+}
+
 // Output related commands.
 
 // ListOutputs lists all configured outputs with their name, id & enabled state.
