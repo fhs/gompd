@@ -804,7 +804,7 @@ func (c *Client) Partition(name string) error {
 	return c.Command("partition %s", name).OK()
 }
 
-// ListPartitions Print a list of partitions and their information.
+// ListPartitions returns a list of partitions and their information.
 func (c *Client) ListPartitions() ([]Attrs, error) {
 	return c.Command("listpartitions").AttrsList("partition")
 }
