@@ -819,7 +819,7 @@ func (c *Client) DelPartition(name string) error {
 	return c.Command("delpartition %s", name).OK()
 }
 
-// MoveOutput Move an output with the given name to the current partition.
+// MoveOutput moves an output with the given name to the current partition.
 func (c *Client) MoveOutput(name string) error {
 	return c.Command("moveoutput %s", name).OK()
 }
