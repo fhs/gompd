@@ -797,7 +797,7 @@ func (c *Client) List(args ...string) ([]string, error) {
 	return ret, nil
 }
 
-//Partition commands
+// Partition commands
 
 // Partition switches the client to a different partition.
 func (c *Client) Partition(name string) error {
