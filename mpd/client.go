@@ -799,7 +799,7 @@ func (c *Client) List(args ...string) ([]string, error) {
 
 //Partition commands
 
-// Partition Switches the client to a different partition.
+// Partition switches the client to a different partition.
 func (c *Client) Partition(name string) error {
 	return c.Command("partition %s", name).OK()
 }
