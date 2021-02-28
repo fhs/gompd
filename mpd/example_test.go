@@ -2,17 +2,19 @@
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
 
-package mpd
+package mpd_test
 
 import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/fhs/gompd/v2/mpd"
 )
 
 func ExampleDial() {
 	// Connect to MPD server
-	conn, err := Dial("tcp", "localhost:6600")
+	conn, err := mpd.Dial("tcp", "localhost:6600")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -44,7 +46,7 @@ func ExampleDial() {
 }
 
 func ExampleNewWatcher() {
-	w, err := NewWatcher("tcp", ":6600", "")
+	w, err := mpd.NewWatcher("tcp", ":6600", "")
 	if err != nil {
 		log.Fatalln(err)
 	}
