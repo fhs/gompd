@@ -69,3 +69,29 @@ func ExampleNewWatcher() {
 	// Do other stuff...
 	time.Sleep(3 * time.Minute)
 }
+
+func ExampleBeginCommandList() {
+	// Connect to the MPD server.
+	conn, err := mpd.Dial("tcp", "localhost:6600")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer conn.Close()
+
+	// Create a *CommandList.
+	cl := conn.BeginCommandList()
+	cl.Play(0)
+	promisedAttrs := cl.CurrentSong()
+
+	// Execute the *CommandList.
+	if err := cl.End(); err != nil {
+		log.Fatalln("CommandList.End failed:", err)
+	}
+
+	// Use the returned attributes.
+	attrs, err := promisedAttrs.Value()
+	if err != nil {
+		log.Fatalln("PromisedAttrs.Value failed: ", err)
+	}
+	log.Println("Currently playing file:", attrs["file"])
+}
