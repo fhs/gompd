@@ -1021,3 +1021,24 @@ func (c *Client) AlbumArt(uri string) ([]byte, error) {
 	}
 	return data, nil
 }
+
+// ReadPicture retrieves the embedded album artwork image for a song with the given URI using MPD's readpicture command.
+func (c *Client) ReadPicture(uri string) ([]byte, error) {
+	offset := 0
+	var data []byte
+	for {
+		// Read the data in chunks
+		chunk, size, err := c.Command("readpicture %s %d", uri, offset).Binary()
+		if err != nil {
+			return nil, err
+		}
+
+		// Accumulate the data
+		data = append(data, chunk...)
+		offset = len(data)
+		if offset >= size {
+			break
+		}
+	}
+	return data, nil
+}

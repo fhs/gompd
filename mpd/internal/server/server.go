@@ -619,6 +619,34 @@ func (s *server) writeResponse(p *textproto.Conn, args []string, okLine string) 
 			ack("no artwork found")
 		}
 
+	case "readpicture":
+		if len(args) < 2 || len(args) > 3 {
+			ack("wrong number of arguments")
+			return
+		}
+		artLen, offset := len(s.artwork), 0
+		var err error
+		if len(args) == 3 {
+			if offset, err = strconv.Atoi(args[2]); err != nil {
+				ack("invalid offset value: %v", err)
+				return
+			} else if offset >= artLen {
+				ack("offset beyond end of file")
+				return
+			}
+		}
+
+		switch args[1] {
+		case "/file/with/small-artwork":
+			// Give away the entire "file" at once
+			writeBinaryChunk(p, s.artwork, offset, len(s.artwork))
+		case "/file/with/huge-artwork":
+			// Give away the "file" 3 bytes at a time
+			writeBinaryChunk(p, s.artwork, offset, 3)
+		default:
+			ack("no artwork found")
+		}
+
 	case "outputs":
 		p.PrintfLine("outputid: 0")
 		p.PrintfLine("outputenabled: 1")

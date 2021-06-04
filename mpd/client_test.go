@@ -639,3 +639,28 @@ func TestAlbumArt(t *testing.T) {
 		})
 	}
 }
+
+func TestReadPicture(t *testing.T) {
+	cli := localDial(t)
+	defer teardown(cli, t)
+	tests := []struct {
+		name    string
+		uri     string
+		want    []byte
+		wantErr bool
+	}{
+		{"artwork as a whole", "/file/with/small-artwork", []byte{0x01, 0x02, 0x03, 0x04, 0x05}, false},
+		{"artwork in chunks", "/file/with/huge-artwork", []byte{0x01, 0x02, 0x03, 0x04, 0x05}, false},
+		{"nonexistent artwork", "some_wrong_file", nil, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := cli.ReadPicture(tt.uri)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ReadPicture() error = %v, wantErr %v", err, tt.wantErr)
+			} else if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ReadPicture() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
