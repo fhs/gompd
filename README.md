@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/fhs/gompd.png)](https://travis-ci.org/fhs/gompd)
-[![GoDoc](https://godoc.org/github.com/fhs/gompd/mpd?status.svg)](https://godoc.org/github.com/fhs/gompd/mpd)
-[![Go Report Card](https://goreportcard.com/badge/github.com/fhs/gompd)](https://goreportcard.com/report/github.com/fhs/gompd)
+[![GoDoc](https://godoc.org/github.com/fhs/gompd/v2/mpd/?status.svg)](https://godoc.org/github.com/fhs/gompd/v2/mpd/)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fhs/gompd/v2)](https://goreportcard.com/report/github.com/fhs/gompd/v2)
 
 ## Overview
 
@@ -12,9 +12,9 @@ Old repository: https://code.google.com/p/gompd/
 
 How to install:
 
-	$ go get github.com/fhs/gompd/mpd
+	$ go get github.com/fhs/gompd/v2/mpd
 
 ## Documentation
 
 Documentation can be found here:
-http://godoc.org/github.com/fhs/gompd/mpd
+http://godoc.org/github.com/fhs/gompd/v2/mpd
