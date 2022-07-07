@@ -21,20 +21,19 @@ import (
 // NB: this function shouldn't be used on the PROTOCOL LEVEL because it considers single quotes special chars and
 // escapes them.
 func quote(s string) string {
-	q := make([]byte, 2+2*len(s))
-	i := 0
-	q[i], i = '"', i+1
-	for _, c := range []byte(s) {
+	var q strings.Builder
+	q.Grow(2 + 2*len(s))
+	q.WriteByte('"')
+	for _, c := range s {
 		// We need to escape single/double quotes and a backslash by prepending them with a '\'
-		if c == '"' || c == '\\' || c == '\'' {
-			q[i] = '\\'
-			i++
+		switch c {
+		case '"', '\'', '\\':
+			q.WriteByte('\\')
 		}
-		q[i] = c
-		i++
+		q.WriteRune(c)
 	}
-	q[i], i = '"', i+1
-	return string(q[:i])
+	q.WriteByte('"')
+	return q.String()
 }
 
 // Quote quotes each string of args in the format understood by MPD.
