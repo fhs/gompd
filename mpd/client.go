@@ -21,20 +21,24 @@ import (
 // NB: this function shouldn't be used on the PROTOCOL LEVEL because it considers single quotes special chars and
 // escapes them.
 func quote(s string) string {
-	q := make([]byte, 2+2*len(s))
-	i := 0
-	q[i], i = '"', i+1
+	// TODO: We are using strings.Builder even tough it's not ideal.
+	// When unsafe.{String,Slice}{,Data} is available, we should use buffer+unsafe.
+	//  q := make([]byte, 2+2*len(s))
+	//  return unsafe.String(unsafe.SliceData(q), len(q))
+	// [issue53003]: https://github.com/golang/go/issues/53003
+	var q strings.Builder
+	q.Grow(2 + 2*len(s))
+	q.WriteByte('"')
 	for _, c := range []byte(s) {
 		// We need to escape single/double quotes and a backslash by prepending them with a '\'
-		if c == '"' || c == '\\' || c == '\'' {
-			q[i] = '\\'
-			i++
+		switch c {
+		case '"', '\\', '\'':
+			q.WriteByte('\\')
 		}
-		q[i] = c
-		i++
+		q.WriteByte(c)
 	}
-	q[i], i = '"', i+1
-	return string(q[:i])
+	q.WriteByte('"')
+	return q.String()
 }
 
 // Quote quotes each string of args in the format understood by MPD.
