@@ -12,6 +12,15 @@ import (
 	"github.com/fhs/gompd/v2/mpd/internal/server"
 )
 
+var _s string
+
+func BenchmarkQuote(b *testing.B) {
+	s := quoteTests[len(quoteTests)-1].source
+	for i := 0; i < b.N; i++ {
+		_s = quote(s)
+	}
+}
+
 var (
 	serverRunning  = false
 	useGoMPDServer = true
@@ -471,22 +480,23 @@ func attrsListEqualKey(a, b []Attrs, key string) bool {
 	return true
 }
 
+// Tests we want to run
+var quoteTests = &[...]struct {
+	source, expected string
+}{
+	{`test.ogg`, `"test.ogg"`},
+	{`test "song".ogg`, `"test \"song\".ogg"`},
+	{`test with 'single' and "double" quotes`, `"test with \'single\' and \"double\" quotes"`},
+	{`escape \"escaped\"`, `"escape \\\"escaped\\\""`},
+	{`just a \`, `"just a \\"`},
+	{`04 - ILL - DECAYED LOVE　feat.℃iel.ogg`, `"04 - ILL - DECAYED LOVE　feat.℃iel.ogg"`},
+	// Test case provided at https://www.musicpd.org/doc/html/protocol.html#escaping-string-values.
+	// NB: we don't support quoting in the "protocol level" mode, hence single quotes get the same treatment as
+	// double quotes and there are 3 backslashes before the single quote, too.
+	{`(Artist == "foo\'bar\"")`, `"(Artist == \"foo\\\'bar\\\"\")"`},
+}
+
 func TestQuote(t *testing.T) {
-	// Tests we want to run
-	var quoteTests = []struct {
-		source, expected string
-	}{
-		{`test.ogg`, `"test.ogg"`},
-		{`test "song".ogg`, `"test \"song\".ogg"`},
-		{`test with 'single' and "double" quotes`, `"test with \'single\' and \"double\" quotes"`},
-		{`escape \"escaped\"`, `"escape \\\"escaped\\\""`},
-		{`just a \`, `"just a \\"`},
-		{`04 - ILL - DECAYED LOVE　feat.℃iel.ogg`, `"04 - ILL - DECAYED LOVE　feat.℃iel.ogg"`},
-		// Test case provided at https://www.musicpd.org/doc/html/protocol.html#escaping-string-values.
-		// NB: we don't support quoting in the "protocol level" mode, hence single quotes get the same treatment as
-		// double quotes and there are 3 backslashes before the single quote, too.
-		{`(Artist == "foo\'bar\"")`, `"(Artist == \"foo\\\'bar\\\"\")"`},
-	}
 	// Run tests
 	for _, test := range quoteTests {
 		if q := quote(test.source); q != test.expected {
@@ -495,11 +505,12 @@ func TestQuote(t *testing.T) {
 	}
 }
 
+var quoteArgsTest = []string{`Artist`, `Nightingale`, `Title`, `"Don't Go Away"`}
+
 func TestQuoteArgs(t *testing.T) {
-	input := []string{`Artist`, `Nightingale`, `Title`, `"Don't Go Away"`}
 	expected := `"Artist" "Nightingale" "Title" "\"Don\'t Go Away\""`
-	if got := quoteArgs(input); got != expected {
-		t.Errorf("quoteArgs(%v) returned %s; expected %s", input, got, expected)
+	if got := quoteArgs(quoteArgsTest); got != expected {
+		t.Errorf("quoteArgs(%v) returned %s; expected %s", quoteArgsTest, got, expected)
 	}
 }
 
@@ -552,9 +563,9 @@ func TestPriorityID(t *testing.T) {
 
 // TODO test adding at position
 // TODO test “addid” failures
-//      - invalid position
-//      - unexpected result (not an ID)
-//      - invalid song
+//   - invalid position
+//   - unexpected result (not an ID)
+//   - invalid song
 func TestAddIDAndDeleteID(t *testing.T) {
 	cli := localDial(t)
 	defer teardown(cli, t)
