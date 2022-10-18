@@ -481,7 +481,7 @@ func attrsListEqualKey(a, b []Attrs, key string) bool {
 }
 
 // Tests we want to run
-var quoteTests = &[...]struct {
+var quoteTests = &[...]*struct {
 	source, expected string
 }{
 	{`test.ogg`, `"test.ogg"`},
