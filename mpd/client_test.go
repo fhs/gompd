@@ -12,12 +12,47 @@ import (
 	"github.com/fhs/gompd/v2/mpd/internal/server"
 )
 
-var _s string
+// Tests we want to run
+var quoteTests = &[...]*struct {
+	source, expected string
+}{
+	{`test.ogg`, `"test.ogg"`},
+	{`test "song".ogg`, `"test \"song\".ogg"`},
+	{`test with 'single' and "double" quotes`, `"test with \'single\' and \"double\" quotes"`},
+	{`escape \"escaped\"`, `"escape \\\"escaped\\\""`},
+	{`just a \`, `"just a \\"`},
+	{`04 - ILL - DECAYED LOVE　feat.℃iel.ogg`, `"04 - ILL - DECAYED LOVE　feat.℃iel.ogg"`},
+	// Test case provided at https://www.musicpd.org/doc/html/protocol.html#escaping-string-values.
+	// NB: we don't support quoting in the "protocol level" mode, hence single quotes get the same treatment as
+	// double quotes and there are 3 backslashes before the single quote, too.
+	{`(Artist == "foo\'bar\"")`, `"(Artist == \"foo\\\'bar\\\"\")"`},
+}
+
+func TestQuote(t *testing.T) {
+	// Run tests
+	for _, test := range quoteTests {
+		if q := quote(test.source); q != test.expected {
+			t.Errorf("quote(%s) returned %s; expected %s", test.source, q, test.expected)
+		}
+	}
+}
+
+var (
+	benchmarkQuoteInput  = quoteTests[len(quoteTests)-1].source
+	benchmarkQuoteOutput = ""
+)
 
 func BenchmarkQuote(b *testing.B) {
-	s := quoteTests[len(quoteTests)-1].source
 	for i := 0; i < b.N; i++ {
-		_s = quote(s)
+		benchmarkQuoteOutput = quote(benchmarkQuoteInput)
+	}
+}
+
+func TestQuoteArgs(t *testing.T) {
+	quoteArgsTest := []string{`Artist`, `Nightingale`, `Title`, `"Don't Go Away"`}
+	expected := `"Artist" "Nightingale" "Title" "\"Don\'t Go Away\""`
+	if got := quoteArgs(quoteArgsTest); got != expected {
+		t.Errorf("quoteArgs(%v) returned %s; expected %s", quoteArgsTest, got, expected)
 	}
 }
 
@@ -478,40 +513,6 @@ func attrsListEqualKey(a, b []Attrs, key string) bool {
 		}
 	}
 	return true
-}
-
-// Tests we want to run
-var quoteTests = &[...]struct {
-	source, expected string
-}{
-	{`test.ogg`, `"test.ogg"`},
-	{`test "song".ogg`, `"test \"song\".ogg"`},
-	{`test with 'single' and "double" quotes`, `"test with \'single\' and \"double\" quotes"`},
-	{`escape \"escaped\"`, `"escape \\\"escaped\\\""`},
-	{`just a \`, `"just a \\"`},
-	{`04 - ILL - DECAYED LOVE　feat.℃iel.ogg`, `"04 - ILL - DECAYED LOVE　feat.℃iel.ogg"`},
-	// Test case provided at https://www.musicpd.org/doc/html/protocol.html#escaping-string-values.
-	// NB: we don't support quoting in the "protocol level" mode, hence single quotes get the same treatment as
-	// double quotes and there are 3 backslashes before the single quote, too.
-	{`(Artist == "foo\'bar\"")`, `"(Artist == \"foo\\\'bar\\\"\")"`},
-}
-
-func TestQuote(t *testing.T) {
-	// Run tests
-	for _, test := range quoteTests {
-		if q := quote(test.source); q != test.expected {
-			t.Errorf("quote(%s) returned %s; expected %s", test.source, q, test.expected)
-		}
-	}
-}
-
-var quoteArgsTest = []string{`Artist`, `Nightingale`, `Title`, `"Don't Go Away"`}
-
-func TestQuoteArgs(t *testing.T) {
-	expected := `"Artist" "Nightingale" "Title" "\"Don\'t Go Away\""`
-	if got := quoteArgs(quoteArgsTest); got != expected {
-		t.Errorf("quoteArgs(%v) returned %s; expected %s", quoteArgsTest, got, expected)
-	}
 }
 
 func TestPriority(t *testing.T) {
