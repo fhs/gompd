@@ -98,6 +98,7 @@ func localDial(t *testing.T) *Client {
 }
 
 func teardown(cli *Client, t *testing.T) {
+	cli.Clear()
 	if err := cli.Close(); err != nil {
 		t.Errorf("Client.Close() = %s need nil", err)
 	}
