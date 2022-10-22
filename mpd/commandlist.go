@@ -11,18 +11,9 @@ import (
 	"strconv"
 )
 
-type cmdType uint
-
-const (
-	cmdNoReturn cmdType = iota
-	cmdAttrReturn
-	cmdIDReturn
-)
-
 type command struct {
-	cmd     string
 	promise interface{}
-	typeOf  cmdType
+	cmd     string
 }
 
 // CommandList is for batch/mass MPD commands.
@@ -72,20 +63,20 @@ func (c *Client) BeginCommandList() *CommandList {
 
 // Ping sends a no-op message to MPD. It's useful for keeping the connection alive.
 func (cl *CommandList) Ping() {
-	cl.cmdQ.PushBack(&command{"ping", nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: "ping"})
 }
 
 // CurrentSong returns information about the current song in the playlist.
 func (cl *CommandList) CurrentSong() *PromisedAttrs {
 	pa := newPromisedAttrs()
-	cl.cmdQ.PushBack(&command{"currentsong", pa, cmdAttrReturn})
+	cl.cmdQ.PushBack(&command{cmd: "currentsong", promise: pa})
 	return pa
 }
 
 // Status returns information about the current status of MPD.
 func (cl *CommandList) Status() *PromisedAttrs {
 	pa := newPromisedAttrs()
-	cl.cmdQ.PushBack(&command{"status", pa, cmdAttrReturn})
+	cl.cmdQ.PushBack(&command{cmd: "status", promise: pa})
 	return pa
 }
 
@@ -95,15 +86,15 @@ func (cl *CommandList) Status() *PromisedAttrs {
 
 // Next plays next song in the playlist.
 func (cl *CommandList) Next() {
-	cl.cmdQ.PushBack(&command{"next", nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: "next"})
 }
 
 // Pause pauses playback if pause is true; resumes playback otherwise.
 func (cl *CommandList) Pause(pause bool) {
 	if pause {
-		cl.cmdQ.PushBack(&command{"pause 1", nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: "pause 1"})
 	} else {
-		cl.cmdQ.PushBack(&command{"pause 0", nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: "pause 0"})
 	}
 }
 
@@ -111,9 +102,9 @@ func (cl *CommandList) Pause(pause bool) {
 // start playing at the current position in the playlist.
 func (cl *CommandList) Play(pos int) {
 	if pos < 0 {
-		cl.cmdQ.PushBack(&command{"play", nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: "play"})
 	} else {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("play %d", pos), nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("play %d", pos)})
 	}
 }
 
@@ -121,71 +112,71 @@ func (cl *CommandList) Play(pos int) {
 // at the currect position in playlist.
 func (cl *CommandList) PlayID(id int) {
 	if id < 0 {
-		cl.cmdQ.PushBack(&command{"playid", nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: "playid"})
 	} else {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("playid %d", id), nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("playid %d", id)})
 	}
 }
 
 // Previous plays previous song in the playlist.
 func (cl *CommandList) Previous() {
-	cl.cmdQ.PushBack(&command{"previous", nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: "previous"})
 }
 
 // Seek seeks to the position time (in seconds) of the song at playlist position pos.
 func (cl *CommandList) Seek(pos, time int) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("seek %d %d", pos, time), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("seek %d %d", pos, time)})
 }
 
 // SeekID is identical to Seek except the song is identified by it's id
 // (not position in playlist).
 func (cl *CommandList) SeekID(id, time int) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("seekid %d %d", id, time), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("seekid %d %d", id, time)})
 }
 
 // Stop stops playback.
 func (cl *CommandList) Stop() {
-	cl.cmdQ.PushBack(&command{"stop", nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: "stop"})
 }
 
 // SetVolume sets the MPD volume level.
 func (cl *CommandList) SetVolume(volume int) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("setvol %d", volume), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("setvol %d", volume)})
 }
 
 // Random enables random playback, if random is true, disables it otherwise.
 func (cl *CommandList) Random(random bool) {
 	if random {
-		cl.cmdQ.PushBack(&command{"random 1", nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: "random 1"})
 	} else {
-		cl.cmdQ.PushBack(&command{"random 0", nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: "random 0"})
 	}
 }
 
 // Repeat enables repeat mode, if repeat is true, disables it otherwise.
 func (cl *CommandList) Repeat(repeat bool) {
 	if repeat {
-		cl.cmdQ.PushBack(&command{"repeat 1", nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: "repeat 1"})
 	} else {
-		cl.cmdQ.PushBack(&command{"repeat 0", nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: "repeat 0"})
 	}
 }
 
 // Single enables single song mode, if single is true, disables it otherwise.
 func (cl *CommandList) Single(single bool) {
 	if single {
-		cl.cmdQ.PushBack(&command{"single 1", nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: "single 1"})
 	} else {
-		cl.cmdQ.PushBack(&command{"single 0", nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: "single 0"})
 	}
 }
 
 // Consume enables consume mode, if consume is true, disables it otherwise.
 func (cl *CommandList) Consume(consume bool) {
 	if consume {
-		cl.cmdQ.PushBack(&command{"consume 1", nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: "consume 1"})
 	} else {
-		cl.cmdQ.PushBack(&command{"consume 0", nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: "consume 0"})
 	}
 }
 
@@ -201,16 +192,16 @@ func (cl *CommandList) SetPriority(priority, start, end int) error {
 		return errors.New("negative start index")
 	}
 	if end < 0 {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("prio %d %d", priority, start), nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("prio %d %d", priority, start)})
 	} else {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("prio %d %d:%d", priority, start, end), nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("prio %d %d:%d", priority, start, end)})
 	}
 	return nil
 }
 
 // SetPriorityID sets the priority for the song identified by id.
 func (cl *CommandList) SetPriorityID(priority, id int) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("prioid %d %d", priority, id), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("prioid %d %d", priority, id)})
 }
 
 // Delete deletes songs from playlist. If both start and end are positive,
@@ -221,16 +212,16 @@ func (cl *CommandList) Delete(start, end int) error {
 		return errors.New("negative start index")
 	}
 	if end < 0 {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("delete %d", start), nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("delete %d", start)})
 	} else {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("delete %d:%d", start, end), nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("delete %d:%d", start, end)})
 	}
 	return nil
 }
 
 // DeleteID deletes the song identified by id.
 func (cl *CommandList) DeleteID(id int) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("deleteid %d", id), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("deleteid %d", id)})
 }
 
 // Move moves the songs between the positions start and end to the new position
@@ -240,21 +231,21 @@ func (cl *CommandList) Move(start, end, position int) error {
 		return errors.New("negative start index")
 	}
 	if end < 0 {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("move %d %d", start, position), nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("move %d %d", start, position)})
 	} else {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("move %d:%d %d", start, end, position), nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("move %d:%d %d", start, end, position)})
 	}
 	return nil
 }
 
 // MoveID moves songid to position on the playlist.
 func (cl *CommandList) MoveID(songid, position int) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("moveid %d %d", songid, position), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("moveid %d %d", songid, position)})
 }
 
 // Add adds the file/directory uri to playlist. Directories add recursively.
 func (cl *CommandList) Add(uri string) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("add %s", quote(uri)), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("add %s", quote(uri))})
 }
 
 // AddID adds the file/directory uri to playlist and returns the identity
@@ -263,16 +254,16 @@ func (cl *CommandList) Add(uri string) {
 func (cl *CommandList) AddID(uri string, pos int) *PromisedID {
 	var id PromisedID = -1
 	if pos >= 0 {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("addid %s %d", quote(uri), pos), &id, cmdIDReturn})
+		cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("addid %s %d", quote(uri), pos), promise: &id})
 	} else {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("addid %s", quote(uri)), &id, cmdIDReturn})
+		cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("addid %s", quote(uri)), promise: &id})
 	}
 	return &id
 }
 
 // Clear clears the current playlist.
 func (cl *CommandList) Clear() {
-	cl.cmdQ.PushBack(&command{"clear", nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: "clear"})
 }
 
 // Shuffle shuffles the tracks from position start to position end in the
@@ -280,10 +271,10 @@ func (cl *CommandList) Clear() {
 // shuffled.
 func (cl *CommandList) Shuffle(start, end int) {
 	if start < 0 || end < 0 {
-		cl.cmdQ.PushBack(&command{"shuffle", nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: "shuffle"})
 		return
 	}
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("shuffle %d:%d", start, end), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("shuffle %d:%d", start, end)})
 }
 
 // Update updates MPD's database: find new files, remove deleted files, update
@@ -291,7 +282,7 @@ func (cl *CommandList) Shuffle(start, end int) {
 // empty string, everything is updated.
 func (cl *CommandList) Update(uri string) (attrs *PromisedAttrs) {
 	attrs = newPromisedAttrs()
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("update %s", quote(uri)), attrs, cmdAttrReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("update %s", quote(uri)), promise: attrs})
 	return
 }
 
@@ -301,48 +292,48 @@ func (cl *CommandList) Update(uri string) (attrs *PromisedAttrs) {
 // If start and end are non-negative, only songs in this range are loaded.
 func (cl *CommandList) PlaylistLoad(name string, start, end int) {
 	if start < 0 || end < 0 {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("load %s", quote(name)), nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("load %s", quote(name))})
 	} else {
-		cl.cmdQ.PushBack(&command{fmt.Sprintf("load %s %d:%d", quote(name), start, end), nil, cmdNoReturn})
+		cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("load %s %d:%d", quote(name), start, end)})
 	}
 }
 
 // PlaylistAdd adds a song identified by uri to a stored playlist identified
 // by name.
 func (cl *CommandList) PlaylistAdd(name string, uri string) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistadd %s %s", quote(name), quote(uri)), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("playlistadd %s %s", quote(name), quote(uri))})
 }
 
 // PlaylistClear clears the specified playlist.
 func (cl *CommandList) PlaylistClear(name string) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistclear %s", quote(name)), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("playlistclear %s", quote(name))})
 }
 
 // PlaylistDelete deletes the song at position pos from the specified playlist.
 func (cl *CommandList) PlaylistDelete(name string, pos int) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistdelete %s %d", quote(name), pos), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("playlistdelete %s %d", quote(name), pos)})
 }
 
 // PlaylistMove moves a song identified by id in a playlist identified by name
 // to the position pos.
 func (cl *CommandList) PlaylistMove(name string, id, pos int) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("playlistmove %s %d %d", quote(name), id, pos), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("playlistmove %s %d %d", quote(name), id, pos)})
 }
 
 // PlaylistRename renames the playlist identified by name to newName.
 func (cl *CommandList) PlaylistRename(name, newName string) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("rename %s %s", quote(name), quote(newName)), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("rename %s %s", quote(name), quote(newName))})
 }
 
 // PlaylistRemove removes the playlist identified by name from the playlist
 // directory.
 func (cl *CommandList) PlaylistRemove(name string) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("rm %s", quote(name)), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("rm %s", quote(name))})
 }
 
 // PlaylistSave saves the current playlist as name in the playlist directory.
 func (cl *CommandList) PlaylistSave(name string) {
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("save %s", quote(name)), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{cmd: fmt.Sprintf("save %s", quote(name))})
 }
 
 // End executes the command list.
@@ -379,14 +370,9 @@ func (cl *CommandList) End() error {
 
 	// Get the responses back and check for errors:
 	for e := cl.cmdQ.Front(); e != nil; e = e.Next() {
-		switch e.Value.(*command).typeOf {
+		switch e.Value.(*command).promise.(type) {
 
-		case cmdNoReturn:
-			if err := cl.client.readOKLine("list_OK"); err != nil {
-				return err
-			}
-
-		case cmdAttrReturn:
+		case *PromisedAttrs:
 			a, aErr := cl.client.readAttrs("list_OK")
 			if aErr != nil {
 				return aErr
@@ -395,7 +381,7 @@ func (cl *CommandList) End() error {
 			pa.attrs = a
 			pa.computed = true
 
-		case cmdIDReturn:
+		case *PromisedID:
 			a, aErr := cl.client.readAttrs("list_OK")
 			if aErr != nil {
 				return aErr
@@ -405,6 +391,11 @@ func (cl *CommandList) End() error {
 				return ridErr
 			}
 			*(e.Value.(*command).promise.(*PromisedID)) = PromisedID(rid)
+
+		default:
+			if err := cl.client.readOKLine("list_OK"); err != nil {
+				return err
+			}
 
 		}
 	}
