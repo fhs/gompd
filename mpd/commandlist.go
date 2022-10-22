@@ -24,14 +24,7 @@ type CommandList struct {
 }
 
 // PromisedAttrs is a set of promised attributes (to be) returned by MPD.
-type PromisedAttrs struct {
-	attrs    Attrs
-	computed bool
-}
-
-func newPromisedAttrs() *PromisedAttrs {
-	return &PromisedAttrs{attrs: make(Attrs), computed: false}
-}
+type PromisedAttrs struct{ a Attrs }
 
 // PromisedID is a promised identifier (to be) returned by MPD.
 type PromisedID int
@@ -39,16 +32,16 @@ type PromisedID int
 // Value returns the Attrs that were computed when CommandList.End was
 // called. Returns an error if CommandList.End has not yet been called.
 func (pa *PromisedAttrs) Value() (Attrs, error) {
-	if !pa.computed {
+	if pa.a == nil {
 		return nil, errors.New("value has not been computed yet")
 	}
-	return pa.attrs, nil
+	return pa.a, nil
 }
 
 // Value returns the ID that was computed when CommandList.End was
 // called. Returns an error if CommandList.End has not yet been called.
 func (pi *PromisedID) Value() (int, error) {
-	if *pi == -1 {
+	if *pi < 0 {
 		return -1, errors.New("value has not been computed yet")
 	}
 	return int(*pi), nil
@@ -67,16 +60,16 @@ func (cl *CommandList) Ping() {
 
 // CurrentSong returns information about the current song in the playlist.
 func (cl *CommandList) CurrentSong() *PromisedAttrs {
-	pa := newPromisedAttrs()
-	cl.cmds = append(cl.cmds, &command{promise: pa, cmd: "currentsong"})
-	return pa
+	var pa PromisedAttrs
+	cl.cmds = append(cl.cmds, &command{promise: &pa, cmd: "currentsong"})
+	return &pa
 }
 
 // Status returns information about the current status of MPD.
 func (cl *CommandList) Status() *PromisedAttrs {
-	pa := newPromisedAttrs()
-	cl.cmds = append(cl.cmds, &command{promise: pa, cmd: "status"})
-	return pa
+	var pa PromisedAttrs
+	cl.cmds = append(cl.cmds, &command{promise: &pa, cmd: "status"})
+	return &pa
 }
 
 //
@@ -279,10 +272,10 @@ func (cl *CommandList) Shuffle(start, end int) {
 // Update updates MPD's database: find new files, remove deleted files, update
 // modified files. uri is a particular directory or file to update. If it is an
 // empty string, everything is updated.
-func (cl *CommandList) Update(uri string) (attrs *PromisedAttrs) {
-	attrs = newPromisedAttrs()
-	cl.cmds = append(cl.cmds, &command{promise: attrs, cmd: fmt.Sprintf("update %s", quote(uri))})
-	return
+func (cl *CommandList) Update(uri string) *PromisedAttrs {
+	var pa PromisedAttrs
+	cl.cmds = append(cl.cmds, &command{promise: &pa, cmd: fmt.Sprintf("update %s", quote(uri))})
+	return &pa
 }
 
 // Stored playlists related commands.
@@ -371,8 +364,7 @@ func (cl *CommandList) End() error {
 			if aErr != nil {
 				return aErr
 			}
-			p.attrs = a
-			p.computed = true
+			p.a = a
 		case *PromisedID:
 			a, aErr := cl.client.readAttrs("list_OK")
 			if aErr != nil {
