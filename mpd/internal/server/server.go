@@ -162,17 +162,17 @@ func (ss stickers) Sorted() []*sticker {
 }
 
 type server struct {
-	state           string
-	database        []attrs        // database of songs
 	index           map[string]int // maps URI to database index
 	playlists       map[string]*playlist
 	currentPlaylist *playlist
 	songStickers    map[string]stickers
-	pos             int // in currentPlaylist
-	artwork         []byte
 	idleEventc      chan string
 	idleStartc      chan *idleRequest
 	idleEndc        chan uint
+	state           string
+	database        []attrs // database of songs
+	artwork         []byte
+	pos             int // in currentPlaylist
 }
 
 func newServer() *server {
@@ -758,9 +758,9 @@ const (
 )
 
 type request struct {
-	typ     requestType
 	args    []string
 	cmdList [][]string
+	typ     requestType
 }
 
 func (s *server) readRequest(p *textproto.Conn) (*request, error) {

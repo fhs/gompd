@@ -61,10 +61,10 @@ type Client struct {
 // It contains the error number, the index of the causing command in the command list,
 // the name of the command in the command list and the error message.
 type Error struct {
-	Code             ErrorCode
-	CommandListIndex int
 	CommandName      string
 	Message          string
+	CommandListIndex int
+	Code             ErrorCode
 }
 
 // ErrorCode is the error code of a Error.
