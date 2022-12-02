@@ -43,6 +43,7 @@ var (
 )
 
 func BenchmarkQuote(b *testing.B) {
+	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		benchmarkQuoteOutput = quote(benchmarkQuoteInput)
 	}
@@ -82,7 +83,8 @@ func localAddr() (net, addr string) {
 	return net, addr + ":" + port
 }
 
-func localDial(t *testing.T) *Client {
+func localDial(t testing.TB) *Client {
+	t.Helper()
 	net, addr := localAddr()
 	if useGoMPDServer && !serverRunning {
 		running := make(chan bool)
@@ -97,7 +99,8 @@ func localDial(t *testing.T) *Client {
 	return cli
 }
 
-func teardown(cli *Client, t *testing.T) {
+func teardown(cli *Client, t testing.TB) {
+	t.Helper()
 	cli.Clear()
 	if err := cli.Close(); err != nil {
 		t.Errorf("Client.Close() = %s need nil", err)
