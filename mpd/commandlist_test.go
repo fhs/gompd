@@ -56,3 +56,20 @@ func TestCommandList(t *testing.T) {
 	}
 
 }
+
+var (
+	errSink error
+	paSink  *PromisedAttrs
+)
+
+func BenchmarkCommandList(b *testing.B) {
+	cli := localDial(b)
+	defer teardown(cli, b)
+	b.ReportAllocs()
+	cl := cli.BeginCommandList()
+	for i := 0; i < b.N; i++ {
+		paSink = cl.CurrentSong()
+		paSink = cl.Status()
+	}
+	errSink = cl.End()
+}
