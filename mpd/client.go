@@ -70,8 +70,8 @@ type Error struct {
 // ErrorCode is the error code of a Error.
 type ErrorCode int
 
-// ErrorCodes as defined in MPD source (https://www.musicpd.org/doc/api/html/Ack_8hxx_source.html)
-// version 0.21.
+// ErrorCodes as defined in MPD source (https://github.com/MusicPlayerDaemon/MPD/blob/v0.23.12/src/protocol/Ack.hxx#L26-L40)
+// version 0.23.12.
 const (
 	ErrorNotList       ErrorCode = 1
 	ErrorArg           ErrorCode = 2
